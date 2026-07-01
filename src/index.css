@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -13,40 +13,96 @@
 }
 
 @layer components {
+  /* --- Background Gradients --- */
   .sky-gradient {
-    background: linear-gradient(135deg, #e0f2fe 0%, #fae8ff 100%);
+    background: linear-gradient(145deg, #e0f2fe 0%, #bae6fd 40%, #e0e7ff 100%);
   }
 
+  /* --- Accent (Sky Blue) --- */
   .accent-border {
-    border: 1px solid rgba(219, 39, 119, 0.2);
+    border: 1px solid rgba(14, 165, 233, 0.2);
   }
-
   .accent-text {
-    @apply text-[#db2777];
+    @apply text-[#0ea5e9];
   }
 
+  /* --- Glass --- */
   .glass {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
+  /* --- Float animation for chibi --- */
   .chibi-float {
     animation: float 6s ease-in-out infinite;
   }
+
+  /* --- Invitation card banner --- */
+  .invite-banner {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
+  }
+
+  /* --- Seal / stamp style --- */
+  .invite-seal {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 0 0 6px rgba(14,165,233,0.3), 0 8px 24px rgba(14,165,233,0.4);
+  }
 }
 
+/* --- Keyframes --- */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+  50%       { transform: translateY(-15px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* --- Text effects --- */
+.text-glow-sky {
+  text-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
 }
 
 .text-glow-pink {
   text-shadow: 0 0 15px rgba(219, 39, 119, 0.15);
 }
 
+/* --- Shimmer divider --- */
+.shimmer-line {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(14,165,233,0.5) 30%,
+    rgba(14,165,233,0.9) 50%,
+    rgba(14,165,233,0.5) 70%,
+    transparent 100%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* --- Petals (keep pink for contrast) --- */
 .petal {
   @apply absolute pointer-events-none;
   background: linear-gradient(to bottom right, #fbcfe8, #f472b6);
   border-radius: 100% 0 100% 0;
+}
+
+/* --- Ornament line with diamond --- */
+.ornament-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0ea5e9;
+}
+.ornament-line::before,
+.ornament-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(14,165,233,0.5));
+}
+.ornament-line::after {
+  background: linear-gradient(90deg, rgba(14,165,233,0.5), transparent);
 }

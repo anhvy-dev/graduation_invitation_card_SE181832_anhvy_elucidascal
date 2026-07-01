@@ -14,7 +14,83 @@ import {
   Scroll,
   Volume2,
   VolumeX,
+  Download,
+  X,
+  ExternalLink,
 } from "lucide-react";
+
+// --- Calendar Utils ---
+
+const EVENT_DETAILS = {
+  title: "Lễ Tốt Nghiệp - Vy Anh | FPT University HCMC",
+  description: "Lễ kỷ niệm Niên khóa 2026 — Đại học FPT, TP. Hồ Chí Minh",
+  location: "Đại học FPT, TP. Hồ Chí Minh",
+  // 15 November 2026, 08:00 – 12:00 ICT (UTC+7)
+  startUtc: "20261115T010000Z", // 08:00 ICT → 01:00 UTC
+  endUtc:   "20261115T050000Z", // 12:00 ICT → 05:00 UTC
+  startLocal: "20261115T080000",
+  endLocal:   "20261115T120000",
+};
+
+function buildGoogleCalendarUrl(): string {
+  const { title, description, location, startUtc, endUtc } = EVENT_DETAILS;
+  const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+  return (
+    base +
+    `&text=${encodeURIComponent(title)}` +
+    `&dates=${startUtc}/${endUtc}` +
+    `&details=${encodeURIComponent(description)}` +
+    `&location=${encodeURIComponent(location)}` +
+    `&sf=true&output=xml`
+  );
+}
+
+function generateIcsContent(): string {
+  const { title, description, location, startLocal, endLocal } = EVENT_DETAILS;
+  const uid = `graduation-se181832-${Date.now()}@fpt.edu.vn`;
+  const now = new Date()
+    .toISOString()
+    .replace(/[-:.]/g, "")
+    .slice(0, 15) + "Z";
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Graduation Invite//SE181832//VI",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${now}`,
+    `DTSTART;TZID=Asia/Ho_Chi_Minh:${startLocal}`,
+    `DTEND;TZID=Asia/Ho_Chi_Minh:${endLocal}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${location}`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+}
+
+function downloadIcs() {
+  const content = generateIcsContent();
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "le-tot-nghiep-vy-anh-2026.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function detectPlatform(): "ios" | "android" | "desktop" {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua) && !(window as unknown as Record<string, unknown>).MSStream) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "desktop";
+}
 
 // --- Constants & Types ---
 
@@ -215,18 +291,18 @@ const Character = ({
 }) => {
   return (
     <div
-      className={`relative transition-all duration-500 transform ${className}`}
+      className={`w-full h-full relative transition-all duration-500 transform ${className}`}
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         <motion.img
           key={emotion}
           src={CHARACTER_IMAGES[emotion]}
           alt={`Character emotion: ${emotion}`}
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 1.1 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full h-full object-contain drop-shadow-2xl"
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.04 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
           referrerPolicy="no-referrer"
         />
       </AnimatePresence>
@@ -268,8 +344,92 @@ const TypewriterText = ({
 
 // --- Main App ---
 
+// --- Calendar Modal (Desktop) ---
+
+const CalendarModal = ({ onClose }: { onClose: () => void }) => (
+  <motion.div
+    key="cal-modal"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/30 backdrop-blur-sm"
+    onClick={onClose}
+  >
+    <motion.div
+      initial={{ scale: 0.85, y: 30, opacity: 0 }}
+      animate={{ scale: 1, y: 0, opacity: 1 }}
+      exit={{ scale: 0.85, y: 30, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      className="relative w-full max-w-sm glass accent-border rounded-3xl p-8 shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Close */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-50 text-slate-400 hover:text-slate-700 transition-colors"
+        aria-label="Đóng"
+      >
+        <X size={16} />
+      </button>
+
+      <div className="text-center space-y-2 mb-8">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-pink-50 border border-pink-100 flex items-center justify-center mb-4">
+          <Calendar className="accent-text" size={26} />
+        </div>
+        <h2 className="text-xl font-display italic text-slate-800">Lưu vào lịch</h2>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Chọn ứng dụng lịch bạn đang dùng
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {/* Google Calendar */}
+        <a
+          href={buildGoogleCalendarUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-white/60 border border-pink-100 hover:bg-pink-50 hover:border-pink-300 transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm flex-shrink-0">
+            <svg viewBox="0 0 48 48" width="22" height="22">
+              <path fill="#4285F4" d="M45.5 20H24v8h12.5C34.8 33.1 29.8 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.95 4 4 12.95 4 24s8.95 20 20 20c11.05 0 20-8.95 20-20 0-1.34-.14-2.65-.5-4z"/>
+            </svg>
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-slate-700">Google Calendar</p>
+            <p className="text-[11px] text-slate-400">Mở trên trình duyệt</p>
+          </div>
+          <ExternalLink size={14} className="text-slate-400 group-hover:text-pink-400 transition-colors" />
+        </a>
+
+        {/* .ics download */}
+        <button
+          onClick={() => { downloadIcs(); onClose(); }}
+          className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-white/60 border border-pink-100 hover:bg-pink-50 hover:border-pink-300 transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Calendar size={18} className="text-slate-500" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-slate-700">Outlook / Apple Calendar</p>
+            <p className="text-[11px] text-slate-400">Tải file .ics</p>
+          </div>
+          <Download size={14} className="text-slate-400 group-hover:text-pink-400 transition-colors" />
+        </button>
+      </div>
+
+      <p className="text-center text-[10px] text-slate-400 mt-6 tracking-wide">
+        15 · 11 · 2026 &nbsp;·&nbsp; 08:00 ICT &nbsp;·&nbsp; Đại học FPT HCMC
+      </p>
+    </motion.div>
+  </motion.div>
+);
+
+// --- Main App ---
+
 export default function App() {
   const [step, setStep] = useState<AppStep>("INTRO");
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const INTRO_VIDEO_ID = "6k21sSDavWU";
   const INVITATION_VIDEO_ID = "b0A0d_Q8I40";
@@ -290,6 +450,14 @@ export default function App() {
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const youtubePlayerRef = useRef<HTMLIFrameElement | null>(null);
+  const emotionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Debounced setter — prevents a stray "fullview" flash when the cursor
+   *  briefly passes through the gap between the two choice cards. */
+  const setEmotionSmooth = useCallback((next: Emotion) => {
+    if (emotionTimerRef.current) clearTimeout(emotionTimerRef.current);
+    emotionTimerRef.current = setTimeout(() => setEmotion(next), 60);
+  }, []);
 
   const postYouTubeCommand = useCallback(
     (func: string, args: unknown[] = []) => {
@@ -304,13 +472,9 @@ export default function App() {
     [],
   );
 
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setStep("INVITATION");
-      setEmotion("joy");
-    }
+  const isMobile = () => window.innerWidth < 768;
 
+  useEffect(() => {
     const saved = localStorage.getItem("graduate_visitor_name");
     if (saved) {
       setUserName(saved);
@@ -329,8 +493,14 @@ export default function App() {
     if (!tempName.trim()) return;
     setUserName(tempName);
     localStorage.setItem("graduate_visitor_name", tempName);
-    setEmotion("fullview");
-    setStep("CHOICE");
+    if (isMobile()) {
+      // Mobile: skip CHOICE, go directly to invitation card
+      setEmotion("joy");
+      setStep("INVITATION");
+    } else {
+      setEmotion("fullview");
+      setStep("CHOICE");
+    }
   };
 
   const nextScene = () => {
@@ -356,24 +526,36 @@ export default function App() {
 
   return (
     <div className="h-screen w-full relative overflow-hidden sky-gradient font-sans selection:bg-pink-100">
-      <button
-        onClick={() => setIsAudioOn((prev) => !prev)}
-        className="fixed top-5 right-5 z-50 px-4 py-2 rounded-full glass accent-border shadow-lg flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-white/80 transition-colors"
-        aria-label={isAudioOn ? "Tắt nhạc nền" : "Bật nhạc nền"}
-      >
-        {isAudioOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        {isAudioOn ? "Tắt nhạc" : "Bật nhạc"}
-      </button>
-
-      <div className="fixed bottom-5 right-5 z-40">
-        <div className="rounded-2xl glass accent-border px-4 py-3 shadow-2xl">
-          <p className="text-[11px] tracking-wide uppercase text-slate-500 flex items-center gap-1">
-            <Music2 size={12} /> Track
-          </p>
-          <p className="text-sm font-semibold text-slate-700">{SONG_TITLE}</p>
-          <p className="text-xs text-slate-500">{SONG_ARTIST}</p>
+      {/* ── Combined Music Widget (top-right) ── */}
+      <div className="fixed top-5 right-5 z-50 flex items-center gap-0 glass accent-border rounded-2xl shadow-lg overflow-hidden">
+        {/* Song info */}
+        <div className="px-4 py-2.5 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+            <Music2 size={13} className="text-sky-500" />
+          </div>
+          <div className="leading-tight">
+            <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Now Playing</p>
+            <p className="text-xs font-semibold text-slate-700 max-w-[160px] truncate">{SONG_TITLE}</p>
+            <p className="text-[10px] text-slate-400">{SONG_ARTIST}</p>
+          </div>
         </div>
+
+        {/* Divider */}
+        <div className="w-px h-10 bg-sky-100" />
+
+        {/* Mute toggle */}
+        <button
+          onClick={() => setIsAudioOn((prev) => !prev)}
+          className="px-4 py-2.5 flex flex-col items-center justify-center gap-0.5 hover:bg-sky-50 transition-colors"
+          aria-label={isAudioOn ? "Tắt nhạc nền" : "Bật nhạc nền"}
+        >
+          {isAudioOn ? <Volume2 size={15} className="text-sky-500" /> : <VolumeX size={15} className="text-slate-400" />}
+          <span className="text-[9px] font-semibold tracking-wide text-slate-500">
+            {isAudioOn ? "Tắt" : "Bật"}
+          </span>
+        </button>
       </div>
+
 
       <iframe
         ref={youtubePlayerRef}
@@ -432,13 +614,13 @@ export default function App() {
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && startGraduation()}
-                    className="w-full px-8 py-5 text-center text-xl font-medium bg-white/40 border border-pink-100 rounded-2xl focus:border-pink-400 outline-none transition-all text-slate-800 placeholder-slate-400"
+                    className="w-full px-8 py-5 text-center text-xl font-medium bg-white/40 border border-sky-100 rounded-2xl focus:border-sky-400 outline-none transition-all text-slate-800 placeholder-slate-400"
                   />
                 </div>
                 <button
                   onClick={startGraduation}
                   disabled={!tempName.trim()}
-                  className="w-full py-5 bg-pink-500 text-white rounded-2xl font-bold text-lg hover:bg-pink-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_10px_30px_rgba(236,72,153,0.2)] flex items-center justify-center gap-2 group"
+                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-bold text-lg hover:bg-sky-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_10px_30px_rgba(14,165,233,0.25)] flex items-center justify-center gap-2 group"
                 >
                   Bắt đầu{" "}
                   <ArrowRight className="group-hover:translate-x-1 transition-transform" />
@@ -473,17 +655,17 @@ export default function App() {
               <div className="flex flex-col md:flex-row gap-8 md:gap-10 w-full items-center justify-center">
                 {/* Left Card: Invitation */}
                 <motion.div
-                  onMouseEnter={() => setEmotion("left")}
-                  onMouseLeave={() => setEmotion("fullview")}
+                  onMouseEnter={() => setEmotionSmooth("left")}
+                  onMouseLeave={() => setEmotionSmooth("fullview")}
                   onClick={() => handleChoice("INVITE")}
                   whileHover={{ y: -10 }}
                   className="w-72 glass accent-border p-8 rounded-3xl cursor-pointer group transition-all h-[400px] flex flex-col justify-end relative overflow-hidden shadow-xl"
                 >
-                  <div className="absolute top-0 right-0 p-6 opacity-5 font-display text-8xl text-pink-500">
+                  <div className="absolute top-0 right-0 p-6 opacity-5 font-display text-8xl text-sky-400">
                     01
                   </div>
                   <div className="space-y-4 relative z-10">
-                    <div className="w-12 h-12 glass accent-border rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
+                    <div className="w-12 h-12 glass accent-border rounded-xl flex items-center justify-center group-hover:bg-sky-100 transition-colors">
                       <Send
                         className="text-slate-600 group-hover:accent-text"
                         size={20}
@@ -498,7 +680,7 @@ export default function App() {
                       </p>
                     </div>
                     <div className="h-1 w-full bg-slate-200 rounded-full overflow-hidden mt-4">
-                      <div className="h-full w-1/3 bg-pink-400"></div>
+                      <div className="h-full w-1/3 bg-sky-400"></div>
                     </div>
                   </div>
                 </motion.div>
@@ -510,13 +692,13 @@ export default function App() {
 
                 {/* Right Card: Journey */}
                 <motion.div
-                  onMouseEnter={() => setEmotion("right")}
-                  onMouseLeave={() => setEmotion("fullview")}
+                  onMouseEnter={() => setEmotionSmooth("right")}
+                  onMouseLeave={() => setEmotionSmooth("fullview")}
                   onClick={() => handleChoice("STORY")}
                   whileHover={{ y: -10 }}
                   className="w-72 glass accent-border p-8 rounded-3xl cursor-pointer group transition-all h-[400px] flex flex-col justify-end relative overflow-hidden shadow-2xl"
                 >
-                  <div className="absolute top-0 right-0 p-6 opacity-5 font-display text-8xl text-pink-500">
+                  <div className="absolute top-0 right-0 p-6 opacity-5 font-display text-8xl text-sky-400">
                     02
                   </div>
                   <div className="space-y-4 relative z-10">
@@ -577,7 +759,7 @@ export default function App() {
               animate={{ y: 0, opacity: 1 }}
               className="w-full max-w-4xl glass accent-border p-8 md:p-12 rounded-3xl mb-8 relative shadow-2xl"
             >
-              <div className="absolute -top-5 left-12 glass accent-border text-pink-600 px-6 py-1.5 rounded-full font-bold shadow-lg text-sm tracking-widest uppercase">
+              <div className="absolute -top-5 left-12 glass accent-border text-sky-600 px-6 py-1.5 rounded-full font-bold shadow-lg text-sm tracking-widest uppercase">
                 Nhà lữ hành {userName}
               </div>
               <div className="min-h-[100px] text-lg md:text-xl text-slate-700 leading-relaxed font-light">
@@ -589,7 +771,7 @@ export default function App() {
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={nextScene}
-                  className={`px-8 py-3 rounded-2xl font-bold bg-pink-500 text-white flex items-center gap-3 transition-all ${isTypingComplete ? "opacity-100 scale-100 shadow-[0_10px_30px_rgba(236,72,153,0.3)]" : "opacity-20 scale-95 pointer-events-none"}`}
+                  className={`px-8 py-3 rounded-2xl font-bold bg-sky-500 text-white flex items-center gap-3 transition-all ${isTypingComplete ? "opacity-100 scale-100 shadow-[0_10px_30px_rgba(14,165,233,0.3)]" : "opacity-20 scale-95 pointer-events-none"}`}
                 >
                   {currentScene === STORY_SCENES.length - 1
                     ? "Kết thúc chu kỳ ký ức"
@@ -608,137 +790,187 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center sky-gradient p-6 overflow-y-auto"
+            className="absolute inset-0 flex items-start justify-center sky-gradient px-4 py-6 overflow-y-auto"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 100, damping: 25 }}
-              className="w-full max-w-xl glass accent-border rounded-[3rem] p-1 shadow-[0_20px_100px_rgba(219,39,119,0.1)] overflow-hidden"
+              initial={{ scale: 0.9, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 100, damping: 22 }}
+              className="w-full max-w-lg my-auto rounded-[2.5rem] overflow-hidden shadow-[0_30px_80px_rgba(14,165,233,0.18),0_8px_32px_rgba(0,0,0,0.08)]"
             >
-              <div className="rounded-[2.8rem] p-8 md:p-12 space-y-12">
-                <div className="text-center space-y-6">
-                  <motion.div
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="inline-flex items-center gap-4 accent-text font-display font-medium tracking-[0.3em] uppercase text-xs"
-                  >
-                    <div className="h-px w-8 bg-pink-300" /> Thư mời chính thức{" "}
-                    <div className="h-px w-8 bg-pink-300" />
-                  </motion.div>
-                  <div className="flex justify-center gap-4 py-2">
+              {/* ── BANNER ── */}
+              <div className="invite-banner relative px-8 pt-10 pb-16 text-white text-center overflow-hidden">
+                {/* decorative bg circles */}
+                <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
+                <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
+
+                <motion.p
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-[10px] tracking-[0.4em] uppercase font-semibold text-white/70 mb-3 relative z-10"
+                >
+                  ✦ &nbsp; Thư Mời Chính Thức &nbsp; ✦
+                </motion.p>
+
+                <motion.h1
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 120 }}
+                  className="text-5xl md:text-6xl font-display italic font-bold leading-tight drop-shadow-sm relative z-10 text-glow-sky"
+                >
+                  Lễ Tốt Nghiệp
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-white/75 text-xs tracking-[0.25em] uppercase mt-2 font-light relative z-10"
+                >
+                  Lễ kỷ niệm Niên khóa 2026
+                </motion.p>
+
+                {/* icon row */}
+                <div className="flex justify-center gap-4 mt-5 relative z-10">
+                  {[
+                    { Icon: GraduationCap, delay: 0.7 },
+                    { Icon: Trophy, delay: 0.85 },
+                    { Icon: Star, delay: 1.0 },
+                  ].map(({ Icon, delay }, i) => (
                     <motion.div
-                      initial={{ rotate: -20, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      transition={{ delay: 0.7 }}
+                      key={i}
+                      initial={{ rotate: -15, opacity: 0, scale: 0.5 }}
+                      animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                      transition={{ delay, type: "spring", stiffness: 200 }}
+                      className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm"
                     >
-                      <GraduationCap className="accent-text" size={24} />
+                      <Icon size={18} className="text-white drop-shadow" />
                     </motion.div>
-                    <motion.div
-                      initial={{ rotate: 20, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      transition={{ delay: 0.9 }}
-                    >
-                      <Trophy className="text-yellow-500" size={24} />
-                    </motion.div>
-                    <motion.div
-                      initial={{ rotate: -20, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      transition={{ delay: 1.1 }}
-                    >
-                      <Star className="text-yellow-400" size={24} />
-                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── SEAL overlapping banner & body ── */}
+              <div className="relative flex justify-center">
+                <div className="absolute -top-9 z-10">
+                  <div className="invite-seal w-[72px] h-[72px] rounded-full flex flex-col items-center justify-center text-white">
+                    <GraduationCap size={26} />
+                    <span className="text-[8px] font-bold tracking-widest mt-0.5">FPT</span>
                   </div>
-                  <h1 className="text-5xl md:text-6xl font-display italic text-slate-900 text-glow-pink">
-                    Lễ Tốt Nghiệp
-                  </h1>
-                  <p className="text-slate-500 font-light tracking-widest text-xs uppercase italic">
-                    Lễ kỷ niệm Niên khóa 2026
+                </div>
+              </div>
+
+              {/* ── BODY ── */}
+              <div className="bg-white/92 backdrop-blur-sm px-6 md:px-10 pt-12 pb-8 space-y-5">
+
+                {/* Invitee name */}
+                <div className="text-center pt-1">
+                  <p className="text-[10px] font-semibold tracking-[0.35em] text-sky-400 uppercase mb-1">Thân mời</p>
+                  <p className="text-3xl font-display italic text-slate-800">
+                    {userName || "Nhà lữ hành đặc biệt"}
                   </p>
                 </div>
 
-                <div className="space-y-10">
-                  <div className="text-center">
-                    <p className="text-pink-600/60 font-medium uppercase tracking-[0.2em] text-[10px] mb-2">
-                      Thân mời
-                    </p>
-                    <p className="text-3xl font-display italic text-slate-800">
-                      {userName || "Nhà lữ hành đặc biệt"}
-                    </p>
-                  </div>
+                {/* Shimmer divider */}
+                <div className="h-px w-full shimmer-line rounded-full" />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-6 glass accent-border rounded-2xl flex items-center gap-4">
-                      <div className="w-10 h-10 glass accent-border rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Calendar className="accent-text" size={18} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          Thời gian
-                        </p>
-                        <p className="font-medium text-slate-700 italic">
-                          Ngày 15 tháng 11, 2026
-                        </p>
-                      </div>
+                {/* Date & Location 2-col */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 bg-sky-50 border border-sky-100 rounded-2xl px-4 py-4">
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="text-sky-500" size={17} />
                     </div>
-
-                    <a
-                      href="https://www.google.com/maps/search/?api=1&query=FPT+University+HCMC"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-6 glass accent-border rounded-2xl flex items-center gap-4 hover:bg-pink-50/50 transition-colors group"
-                    >
-                      <div className="w-10 h-10 glass accent-border rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-pink-100 transition-colors">
-                        <MapPin className="accent-text" size={18} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          Địa điểm (nhấn để xem bản đồ)
-                        </p>
-                        <p className="font-medium text-slate-700 italic group-hover:accent-text transition-colors">
-                          Đại học FPT, TP. Hồ Chí Minh
-                        </p>
-                      </div>
-                    </a>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Thời gian</p>
+                      <p className="text-sm font-semibold text-slate-700 leading-tight">15 · 11 · 2026</p>
+                      <p className="text-[10px] text-slate-400">08:00 ICT</p>
+                    </div>
                   </div>
 
-                  <div className="p-8 rounded-2xl space-y-2 text-center border-y border-pink-100 bg-white/20">
-                    <p className="text-slate-500 text-sm leading-relaxed font-light italic">
-                      “Bất kể bạn là ai, khi nhận được lời mời này, bạn đã là
-                      một phần quan trọng trong hành trình đầy ước mơ, thử thách
-                      và những lần vấp ngã của mình — nơi mỗi ký ức đều mang dấu
-                      ấn của những người đã từng bước qua cuộc đời mình, trong
-                      đó có bạn.”
-                      <br />
-                      “Whoever you are, by receiving this invitation, you have
-                      already been an important part of my journey — a journey
-                      filled with dreams, challenges, and stumbles, where every
-                      memory carries the imprint of those who have walked
-                      through my life, including you.”
-                    </p>
-                  </div>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=FPT+University+HCMC"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-sky-50 border border-sky-100 rounded-2xl px-4 py-4 hover:bg-sky-100 transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center flex-shrink-0 group-hover:bg-sky-200 transition-colors">
+                      <MapPin className="text-sky-500" size={17} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Địa điểm ↗</p>
+                      <p className="text-sm font-semibold text-slate-700 leading-tight">Đại học FPT</p>
+                      <p className="text-[10px] text-slate-400">TP. Hồ Chí Minh</p>
+                    </div>
+                  </a>
                 </div>
 
-                <div className="flex flex-col gap-6 items-center">
+                {/* Quote block */}
+                <div className="relative rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100 px-6 py-5 text-center">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 text-sky-300 text-2xl leading-none select-none">"</span>
+                  <p className="text-slate-500 text-[13px] leading-relaxed font-light italic">
+                    Bất kể bạn là ai, khi nhận được lời mời này, bạn đã là
+                    một phần quan trọng trong hành trình của mình — nơi mỗi ký
+                    ức đều mang dấu ấn của những người đã từng bước qua cuộc
+                    đời mình, trong đó có bạn.
+                  </p>
+                  <p className="text-slate-400 text-[11px] leading-relaxed font-light italic mt-2">
+                    "Whoever you are, by receiving this invitation, you have already been an important part of my journey."
+                  </p>
+                </div>
+
+                {/* Shimmer divider */}
+                <div className="h-px w-full shimmer-line rounded-full" />
+
+                {/* CTA */}
+                <div className="flex flex-col gap-3 items-center">
                   <motion.button
+                    id="btn-confirm-attendance"
                     whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full py-5 bg-pink-500 text-white rounded-2xl font-bold text-lg shadow-[0_10px_30px_rgba(236,72,153,0.3)] flex items-center justify-center gap-2 group"
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      const platform = detectPlatform();
+                      if (platform === "ios") {
+                        downloadIcs();
+                      } else if (platform === "android") {
+                        const gcalUrl = buildGoogleCalendarUrl();
+                        const intentUrl =
+                          `intent://calendar.google.com/calendar/render?action=TEMPLATE` +
+                          `&text=${encodeURIComponent(EVENT_DETAILS.title)}` +
+                          `&dates=${EVENT_DETAILS.startUtc}/${EVENT_DETAILS.endUtc}` +
+                          `&details=${encodeURIComponent(EVENT_DETAILS.description)}` +
+                          `&location=${encodeURIComponent(EVENT_DETAILS.location)}` +
+                          `#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=${encodeURIComponent(gcalUrl)};end`;
+                        window.location.href = intentUrl;
+                      } else {
+                        setShowCalendarModal(true);
+                      }
+                    }}
+                    className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold text-base shadow-[0_10px_30px_rgba(14,165,233,0.35)] flex items-center justify-center gap-2 group transition-all"
                   >
-                    Xác nhận tham gia{" "}
-                    <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                    <Calendar size={18} className="opacity-80" />
+                    Xác nhận tham gia
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </motion.button>
-                  <button
-                    onClick={() => setStep("CHOICE")}
-                    className="text-slate-400 hover:accent-text font-medium transition-colors text-xs tracking-widest uppercase"
-                  >
-                    Quay lại điều hướng
-                  </button>
+                  {!isMobile() && (
+                    <button
+                      onClick={() => setStep("CHOICE")}
+                      className="text-slate-400 hover:text-sky-500 font-medium transition-colors text-[11px] tracking-widest uppercase"
+                    >
+                      Quay lại điều hướng
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Calendar Modal (Desktop) */}
+      <AnimatePresence>
+        {showCalendarModal && (
+          <CalendarModal onClose={() => setShowCalendarModal(false)} />
         )}
       </AnimatePresence>
 
