@@ -1,108 +1,845 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root {
+  --navy:       #14243A;
+  --navy-deep:  #0D1A2B;
+  --royal:      #1769AA;
+  --gold:       #D6B477;
+  --gold-light: #E8CFA0;
+  --gold-dark:  #B8944F;
+  --ivory:      #FAF8F3;
+  --ivory-warm: #F4F0E8;
+  --slate:      #64748B;
+  --slate-light:#94A3B8;
+  --ink:        #1E2A3A;
+}
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Playfair Display", serif;
+  --font-sans:    "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Playfair Display", serif;
 }
 
+/* ─── Base ───────────────────────────────────────────────── */
 @layer base {
+  * { box-sizing: border-box; }
+
   body {
-    @apply bg-[#f0f9ff] text-[#1e293b] font-sans overflow-hidden;
+    background-color: var(--ivory);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: rgba(214, 180, 119, 0.25);
+    color: var(--navy);
   }
 }
 
-@layer components {
-  /* --- Background Gradients --- */
-  .sky-gradient {
-    background: linear-gradient(145deg, #e0f2fe 0%, #bae6fd 40%, #e0e7ff 100%);
-  }
-
-  /* --- Accent (Sky Blue) --- */
-  .accent-border {
-    border: 1px solid rgba(14, 165, 233, 0.2);
-  }
-  .accent-text {
-    @apply text-[#0ea5e9];
-  }
-
-  /* --- Glass --- */
-  .glass {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-
-  /* --- Float animation for chibi --- */
-  .chibi-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  /* --- Invitation card banner --- */
-  .invite-banner {
-    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
-  }
-
-  /* --- Seal / stamp style --- */
-  .invite-seal {
-    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 0 0 6px rgba(14,165,233,0.3), 0 8px 24px rgba(14,165,233,0.4);
-  }
+/* ─── Page background ────────────────────────────────────── */
+.page-bg {
+  background-color: var(--ivory);
+  background-image:
+    /* subtle paper grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
 }
 
-/* --- Keyframes --- */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-15px); }
+/* ─── Card ───────────────────────────────────────────────── */
+.invitation-card {
+  background-color: var(--ivory);
+  box-shadow:
+    0 2px 4px rgba(20, 36, 58, 0.04),
+    0 8px 24px rgba(20, 36, 58, 0.06),
+    0 32px 80px rgba(20, 36, 58, 0.10);
+  border: 1px solid rgba(214, 180, 119, 0.20);
+}
+
+/* ─── Hero / Banner ──────────────────────────────────────── */
+.hero-bg {
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(23, 105, 170, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 100%, rgba(214, 180, 119, 0.12) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ─── Gold rule ──────────────────────────────────────────── */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214, 180, 119, 0.3) 20%,
+    rgba(214, 180, 119, 0.8) 50%,
+    rgba(214, 180, 119, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+.gold-rule-solid {
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.35;
+}
+
+/* ─── Eyebrow label ──────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.eyebrow-dark {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--slate-light);
+}
+
+/* ─── Detail label ───────────────────────────────────────── */
+.detail-label {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ─── Academic seal SVG ──────────────────────────────────── */
+.seal-ring {
+  stroke: var(--gold);
+  stroke-width: 1.2;
+  fill: none;
+  stroke-dasharray: 3 4;
+}
+
+/* ─── Music widget ───────────────────────────────────────── */
+.music-widget {
+  background: rgba(20, 36, 58, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(214, 180, 119, 0.18);
+  border-radius: 1rem;
+}
+
+/* ─── Calendar modal ─────────────────────────────────────── */
+.cal-modal-bg {
+  background: var(--ivory);
+  border: 1px solid rgba(214, 180, 119, 0.25);
+  border-radius: 1.25rem;
+}
+
+.cal-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.125rem;
+  border: 1px solid rgba(20, 36, 58, 0.10);
+  border-radius: 0.75rem;
+  background: white;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+  width: 100%;
+}
+
+.cal-option:hover {
+  border-color: rgba(214, 180, 119, 0.5);
+  background: rgba(250, 248, 243, 0.8);
+}
+
+/* ─── CTA button ─────────────────────────────────────────── */
+.cta-btn {
+  background: var(--navy);
+  color: var(--ivory);
+  border: 1px solid rgba(214, 180, 119, 0.25);
+  border-radius: 0.375rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 1rem 2.5rem;
+  transition: background 0.25s, border-color 0.25s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.cta-btn:hover {
+  background: var(--navy-deep);
+  border-color: rgba(214, 180, 119, 0.50);
+  transform: translateY(-1px);
+}
+
+.cta-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── Confetti / petal fall ──────────────────────────────── */
+.petal {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50% 0 50% 0;
+  background: linear-gradient(135deg, rgba(214,180,119,0.4), rgba(214,180,119,0.15));
+}
+
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
   0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  100% { background-position:  200% center; }
 }
 
-/* --- Text effects --- */
-.text-glow-sky {
-  text-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-.text-glow-pink {
-  text-shadow: 0 0 15px rgba(219, 39, 119, 0.15);
+.spin-slow {
+  animation: spin-slow 40s linear infinite;
 }
 
-/* --- Shimmer divider --- */
-.shimmer-line {
+.fade-up-1 { animation: fadeUp 0.7s ease both; animation-delay: 0.15s; }
+.fade-up-2 { animation: fadeUp 0.7s ease both; animation-delay: 0.30s; }
+.fade-up-3 { animation: fadeUp 0.7s ease both; animation-delay: 0.50s; }
+.fade-up-4 { animation: fadeUp 0.7s ease both; animation-delay: 0.70s; }
+.fade-up-5 { animation: fadeUp 0.7s ease both; animation-delay: 0.90s; }
+.fade-up-6 { animation: fadeUp 0.7s ease both; animation-delay: 1.10s; }
+.fade-up-7 { animation: fadeUp 0.7s ease both; animation-delay: 1.30s; }
+
+/* ═══════════════════════════════════════════════════════
+   3-D BOOKLET SYSTEM
+═══════════════════════════════════════════════════════ */
+
+/* ─── Scene / Perspective ─────────────────────────────── */
+.booklet-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 26rem;
+}
+
+/* ─── Booklet Wrapper ─────────────────────────────────── */
+.booklet-wrap {
+  position: relative;
+  width: 100%;
+  /* Fixed A5-ish height; pages fill it */
+  height: 560px;
+  perspective: 2000px;
+  /* Slight tilt for 3-D table feel */
+  transform: rotateX(4deg);
+  transform-style: preserve-3d;
+}
+
+/* ─── Spine ───────────────────────────────────────────── */
+.booklet-spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--navy-deep) 0%,
+    rgba(20,36,58,0.85) 40%,
+    rgba(30,50,80,0.7) 100%
+  );
+  border-radius: 2px 0 0 2px;
+  box-shadow:
+    inset -2px 0 6px rgba(0,0,0,0.35),
+    2px 0 8px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+/* ─── Drop shadow ─────────────────────────────────────── */
+.booklet-shadow {
+  position: absolute;
+  bottom: -18px;
+  left: 10px;
+  right: -4px;
+  height: 24px;
+  background: radial-gradient(ellipse 90% 80% at 50% 0%, rgba(20,36,58,0.35) 0%, transparent 100%);
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Leaf (page pair: front + back) ─────────────────── */
+.booklet-leaf {
+  position: absolute;
+  top: 0;
+  left: 10px; /* starts after spine */
+  width: calc(100% - 10px);
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  will-change: transform;
+  /* Use box-shadow instead of filter: drop-shadow to avoid breaking backface-visibility */
+  box-shadow: 4px 0 8px rgba(0,0,0,0.18);
+}
+
+.booklet-leaf--back {
+  /* No transform — always flat on the "table" */
+  transform: rotateY(0deg) !important;
+  transition: none !important;
+  filter: none;
+}
+
+/* ─── Leaf faces ──────────────────────────────────────── */
+.leaf-front,
+.leaf-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 0 2px 2px 0;
+}
+
+.leaf-back {
+  transform: rotateY(180deg);
+}
+
+/* ─── Paper back face ─────────────────────────────────── */
+.page-ivory-back {
+  background: var(--ivory);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+}
+
+/* Paper edge visible on back of turned pages */
+.leaf-back-paper-edge {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(to left, rgba(214,180,119,0.12), transparent);
+}
+
+/* ─── Page inner content wrapper ─────────────────────── */
+.booklet-page {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ─── Page colors ─────────────────────────────────────── */
+.page-ivory {
+  background-color: var(--ivory);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+}
+
+.page-navy {
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(23, 105, 170, 0.35) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ─── Cover ───────────────────────────────────────────── */
+.booklet-cover {
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(23, 105, 170, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 100%, rgba(214, 180, 119, 0.12) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.5rem;
+}
+
+.booklet-cover:hover .cover-tap-hint { opacity: 1; }
+.booklet-cover:focus { outline: 2px solid rgba(214,180,119,0.5); }
+
+/* Cover border inset */
+.cover-border {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(214,180,119,0.30);
+  pointer-events: none;
+  border-radius: 1px;
+}
+
+/* Cover top ornament */
+.cover-ornament-top {
+  width: 100%;
+  height: 4px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(14,165,233,0.5) 30%,
-    rgba(14,165,233,0.9) 50%,
-    rgba(14,165,233,0.5) 70%,
+    rgba(214,180,119,0.1) 10%,
+    rgba(214,180,119,0.6) 50%,
+    rgba(214,180,119,0.1) 90%,
     transparent 100%);
-  background-size: 200% auto;
-  animation: shimmer 3s linear infinite;
+  flex-shrink: 0;
 }
 
-/* --- Petals (keep pink for contrast) --- */
-.petal {
-  @apply absolute pointer-events-none;
-  background: linear-gradient(to bottom right, #fbcfe8, #f472b6);
-  border-radius: 100% 0 100% 0;
+.cover-ornament-bottom {
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214,180,119,0.4) 30%,
+    rgba(214,180,119,0.8) 50%,
+    rgba(214,180,119,0.4) 70%,
+    transparent 100%);
+  margin-bottom: 0.5rem;
 }
 
-/* --- Ornament line with diamond --- */
-.ornament-line {
+.cover-gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214,180,119,0.25) 10%,
+    rgba(214,180,119,0.75) 50%,
+    rgba(214,180,119,0.25) 90%,
+    transparent 100%);
+}
+
+/* Cover text */
+.cover-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(214,180,119,0.75);
+}
+
+.cover-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 9vw, 3.2rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ivory);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.cover-class {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: rgba(214,180,119,0.65);
+  text-transform: uppercase;
+}
+
+/* "Tap to open" hint */
+.cover-tap-hint {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #0ea5e9;
+  gap: 0.4rem;
+  opacity: 0.55;
+  transition: opacity 0.3s;
 }
-.ornament-line::before,
-.ornament-line::after {
-  content: '';
-  flex: 1;
+
+.tap-hint-text {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  color: rgba(214,180,119,0.7);
+  text-transform: uppercase;
+}
+
+.tap-hint-arrow {
+  font-size: 0.75rem;
+  color: rgba(214,180,119,0.7);
+  animation: pulse-right 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-right {
+  0%, 100% { transform: translateX(0); opacity: 0.6; }
+  50%       { transform: translateX(3px); opacity: 1; }
+}
+
+/* Cover paper sheen (light gloss at top-right) */
+.cover-sheen {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 45%;
+  background: radial-gradient(ellipse 80% 60% at 90% 5%, rgba(250,248,243,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Inside cover ────────────────────────────────────── */
+.inside-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inside-cover-content::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 60px;
+  opacity: 0.06;
+  background: radial-gradient(circle, var(--gold) 30%, transparent 70%);
+}
+
+/* ─── Page decorations ─────────────────────────────────── */
+.page-top-line {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214,180,119,0.08) 10%,
+    rgba(214,180,119,0.4) 50%,
+    rgba(214,180,119,0.08) 90%,
+    transparent 100%);
+  flex-shrink: 0;
+}
+
+.page-top-line-gold {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214,180,119,0.15) 10%,
+    rgba(214,180,119,0.55) 50%,
+    rgba(214,180,119,0.15) 90%,
+    transparent 100%);
+  flex-shrink: 0;
+}
+
+.page-gold-rule {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(14,165,233,0.5));
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(214,180,119,0.3) 20%,
+    rgba(214,180,119,0.8) 50%,
+    rgba(214,180,119,0.3) 80%,
+    transparent 100%);
 }
-.ornament-line::after {
-  background: linear-gradient(90deg, rgba(14,165,233,0.5), transparent);
+
+.page-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--slate-light);
 }
+
+/* ─── Page typography ──────────────────────────────────── */
+.recipient-name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.75rem, 7vw, 2.4rem);
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.15;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.invitation-body {
+  color: var(--slate);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  font-weight: 300;
+  max-width: 30ch;
+  margin: 0 auto;
+}
+
+.page-number-label {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--slate-light);
+  text-align: center;
+}
+
+.page-number-label-light {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(214,180,119,0.4);
+}
+
+/* ─── Event detail rows ────────────────────────────────── */
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detail-icon-wrap {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.detail-label-sm {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.2rem;
+}
+
+.detail-date {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--navy);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.detail-venue {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.4;
+}
+
+.detail-sub {
+  font-size: 0.72rem;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.thin-divider {
+  height: 1px;
+  background: rgba(20,36,58,0.07);
+}
+
+.map-link {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--royal);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(23,105,170,0.3);
+  padding-bottom: 1px;
+  transition: border-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.map-link:hover { border-color: var(--royal); }
+
+/* ─── Final page typography ────────────────────────────── */
+.final-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.final-quote-vi {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: rgba(250,248,243,0.88);
+  font-weight: 400;
+}
+
+.final-quote-en {
+  font-size: 0.7rem;
+  color: rgba(250,248,243,0.45);
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
+
+.final-with-gratitude {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(214,180,119,0.6);
+  margin-bottom: 0.4rem;
+}
+
+.final-signature {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.75rem;
+  font-weight: 400;
+  color: var(--ivory);
+  line-height: 1.1;
+}
+
+.final-class {
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-top: 0.25rem;
+}
+
+/* Restart button */
+.restart-btn {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(214,180,119,0.55);
+  border: 1px solid rgba(214,180,119,0.2);
+  border-radius: 2rem;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  display: inline-block;
+}
+
+.restart-btn:hover {
+  color: rgba(214,180,119,0.9);
+  border-color: rgba(214,180,119,0.5);
+}
+
+/* ─── Navigation controls ─────────────────────────────── */
+.booklet-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 0.25rem;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--slate-light);
+  transition: color 0.2s, opacity 0.2s;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+}
+
+.nav-btn:hover:not(:disabled) {
+  color: var(--navy);
+}
+
+.nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.nav-btn--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nav-label {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ─── Page indicator ──────────────────────────────────── */
+.page-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-ind-text {
+  font-family: var(--font-sans);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--slate-light);
+}
+
+.page-dots {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.page-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(20,36,58,0.18);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s, transform 0.2s;
+}
+
+.page-dot:hover { background: rgba(20,36,58,0.40); }
+
+.page-dot--active {
+  background: var(--gold);
+  transform: scale(1.3);
+}
+
+/* ─── Reduced motion ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .booklet-leaf {
+    transition: none !important;
+  }
+  .tap-hint-arrow {
+    animation: none;
+  }
+  .petal {
+    animation: none !important;
+    display: none;
+  }
+}
+
+/* ─── Mobile tweaks ───────────────────────────────────── */
+@media (max-width: 430px) {
+  .booklet-wrap {
+    height: 500px;
+    transform: rotateX(2deg);
+  }
+  .cover-title {
+    font-size: 2.2rem;
+  }
+  .recipient-name {
+    font-size: 1.65rem;
+  }
+  .booklet-scene {
+    gap: 1.5rem;
+  }
+}
+
