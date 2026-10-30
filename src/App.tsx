@@ -1,34 +1,26 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Calendar,
-  MapPin,
   Music2,
   Volume2,
   VolumeX,
   Download,
   X,
   ExternalLink,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
-
-// ——— Calendar Utils ———————————————————————————————————————
+import { CinematicIntro } from "./components/CinematicIntro";
+import { BookletViewer, type BookletViewerHandle } from "./components/BookletViewer";
+import { useReducedMotion } from "./hooks/useReducedMotion";
 
 const EVENT_DETAILS = {
   title: "Lễ Tốt Nghiệp - Vy Anh | FPT University HCMC",
   description: "Lễ kỷ niệm Niên khóa 2026 – Đại học FPT, TP. Hồ Chí Minh",
   location: "Đại học FPT, TP. Hồ Chí Minh",
   startUtc: "20261115T010000Z",
-  endUtc:   "20261115T050000Z",
+  endUtc: "20261115T050000Z",
   startLocal: "20261115T080000",
-  endLocal:   "20261115T120000",
+  endLocal: "20261115T120000",
 };
 
 function buildGoogleCalendarUrl(): string {
@@ -79,54 +71,19 @@ function detectPlatform(): "ios" | "android" | "desktop" {
   return "desktop";
 }
 
-// ——— Gold Confetti ————————————————————————————————————————
+const AcademicSeal = ({ size = 64 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" stroke="#D6B477" strokeWidth="0.8" strokeDasharray="3 3" />
+    <circle cx="32" cy="32" r="25" stroke="#D6B477" strokeWidth="0.5" opacity="0.6" />
+    <text x="32" y="27" textAnchor="middle" fill="#D6B477" fontSize="7" fontFamily="serif" letterSpacing="1.5" opacity="0.9">FPT</text>
+    <text x="32" y="37" textAnchor="middle" fill="#D6B477" fontSize="4.5" fontFamily="serif" letterSpacing="1" opacity="0.7">UNIVERSITY</text>
+    <text x="32" y="46" textAnchor="middle" fill="#D6B477" fontSize="4" fontFamily="serif" letterSpacing="0.5" opacity="0.6">2026</text>
+    <path d="M20 49 Q32 53 44 49" stroke="#D6B477" strokeWidth="0.5" fill="none" opacity="0.5" />
+  </svg>
+);
 
-const GoldConfetti = ({ active }: { active: boolean }) => {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 30 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 1.2,
-        size: Math.random() * 7 + 4,
-        duration: Math.random() * 3 + 3,
-        rotation: Math.random() * 720,
-        shape: Math.random() > 0.5 ? "round" : "rect",
-      })),
-    []
-  );
-  if (!active) return null;
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-      {pieces.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute"
-          style={{
-            left: `${p.left}%`,
-            top: -20,
-            width: p.size,
-            height: p.shape === "round" ? p.size : p.size * 0.5,
-            borderRadius: p.shape === "round" ? "50%" : "2px",
-            background:
-              p.id % 3 === 0
-                ? "rgba(214,180,119,0.85)"
-                : p.id % 3 === 1
-                  ? "rgba(232,207,160,0.75)"
-                  : "rgba(184,148,79,0.7)",
-          }}
-          initial={{ top: -20, rotate: 0, opacity: 1 }}
-          animate={{ top: "110%", rotate: p.rotation, opacity: [1, 1, 0] }}
-          transition={{ duration: p.duration, delay: p.delay, ease: "easeIn" }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// ——— Gold Petal Effect ————————————————————————————————————
-
-const PetalEffect = () => {
+const PetalEffect = ({ reducedMotion }: { reducedMotion: boolean }) => {
+  if (reducedMotion) return null;
   const petals = Array.from({ length: 12 });
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -159,60 +116,6 @@ const PetalEffect = () => {
     </div>
   );
 };
-
-// ——— Graduation Cap SVG ———————————————————————————————————
-
-const GradCapIllustration = () => (
-  <svg viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-    <path d="M60 14L108 36L60 58L12 36L60 14Z" fill="rgba(214,180,119,0.12)" stroke="rgba(214,180,119,0.6)" strokeWidth="0.8" />
-    <rect x="53" y="7" width="14" height="14" rx="1" fill="rgba(214,180,119,0.20)" stroke="rgba(214,180,119,0.55)" strokeWidth="0.8" transform="rotate(45 60 14)" />
-    <line x1="108" y1="36" x2="108" y2="60" stroke="rgba(214,180,119,0.5)" strokeWidth="0.8" />
-    <circle cx="108" cy="65" r="4" fill="none" stroke="rgba(214,180,119,0.5)" strokeWidth="0.8" />
-    <line x1="104" y1="65" x2="100" y2="74" stroke="rgba(214,180,119,0.4)" strokeWidth="0.7" />
-    <line x1="108" y1="69" x2="108" y2="78" stroke="rgba(214,180,119,0.4)" strokeWidth="0.7" />
-    <line x1="112" y1="65" x2="116" y2="74" stroke="rgba(214,180,119,0.4)" strokeWidth="0.7" />
-    <line x1="60" y1="58" x2="60" y2="75" stroke="rgba(214,180,119,0.4)" strokeWidth="0.8" />
-    <ellipse cx="60" cy="75" rx="14" ry="4" fill="none" stroke="rgba(214,180,119,0.35)" strokeWidth="0.8" />
-    <line x1="12" y1="36" x2="12" y2="48" stroke="rgba(214,180,119,0.3)" strokeWidth="0.7" strokeDasharray="2 2" />
-  </svg>
-);
-
-// ——— Academic Seal SVG ————————————————————————————————————
-
-const AcademicSeal = ({ size = 64 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="32" cy="32" r="30" stroke="#D6B477" strokeWidth="0.8" strokeDasharray="3 3" />
-    <circle cx="32" cy="32" r="25" stroke="#D6B477" strokeWidth="0.5" opacity="0.6" />
-    <text x="32" y="27" textAnchor="middle" fill="#D6B477" fontSize="7" fontFamily="serif" letterSpacing="1.5" opacity="0.9">FPT</text>
-    <text x="32" y="37" textAnchor="middle" fill="#D6B477" fontSize="4.5" fontFamily="serif" letterSpacing="1" opacity="0.7">UNIVERSITY</text>
-    <text x="32" y="46" textAnchor="middle" fill="#D6B477" fontSize="4" fontFamily="serif" letterSpacing="0.5" opacity="0.6">2026</text>
-    <path d="M20 49 Q32 53 44 49" stroke="#D6B477" strokeWidth="0.5" fill="none" opacity="0.5" />
-  </svg>
-);
-
-// ——— Academic Emblem (ornate, for cover) ———————————————————
-
-const AcademicEmblem = ({ size = 80 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="46" stroke="#D6B477" strokeWidth="0.8" strokeDasharray="4 3" />
-    <circle cx="50" cy="50" r="38" stroke="#D6B477" strokeWidth="0.5" opacity="0.5" />
-    {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-      const rad = (deg * Math.PI) / 180;
-      const x1 = 50 + 30 * Math.cos(rad);
-      const y1 = 50 + 30 * Math.sin(rad);
-      const x2 = 50 + 38 * Math.cos(rad);
-      const y2 = 50 + 38 * Math.sin(rad);
-      return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#D6B477" strokeWidth="0.6" opacity="0.5" />;
-    })}
-    <path d="M50 28 L68 38 L50 48 L32 38Z" fill="rgba(214,180,119,0.15)" stroke="#D6B477" strokeWidth="0.7" opacity="0.8" />
-    <text x="50" y="60" textAnchor="middle" fill="#D6B477" fontSize="5.5" fontFamily="serif" letterSpacing="2" opacity="0.9">FPT</text>
-    <text x="50" y="68" textAnchor="middle" fill="#D6B477" fontSize="3.5" fontFamily="serif" letterSpacing="1.2" opacity="0.65">UNIVERSITY</text>
-    <line x1="68" y1="38" x2="68" y2="52" stroke="#D6B477" strokeWidth="0.6" opacity="0.5" />
-    <circle cx="68" cy="55" r="2.5" fill="none" stroke="#D6B477" strokeWidth="0.6" opacity="0.5" />
-  </svg>
-);
-
-// ——— Calendar Modal ———————————————————————————————————————
 
 const CalendarModal = ({ onClose }: { onClose: () => void }) => (
   <motion.div
@@ -271,316 +174,15 @@ const CalendarModal = ({ onClose }: { onClose: () => void }) => (
   </motion.div>
 );
 
-// ——— Page Components ——————————————————————————————————————
-
-const CoverPage = ({ onClick }: { onClick: () => void }) => (
-  <div
-    className="booklet-page booklet-cover"
-    onClick={onClick}
-    role="button"
-    tabIndex={0}
-    aria-label="Chạm để mở thiệp"
-    onKeyDown={(e) => e.key === "Enter" && onClick()}
-  >
-    <div className="cover-border" />
-    <div className="cover-ornament-top" />
-    <div className="flex flex-col items-center mt-10 mb-2">
-      <AcademicEmblem size={72} />
-    </div>
-    <div className="text-center px-8 mb-3">
-      <p className="cover-eyebrow mb-3">LỄ TỐT NGHIỆP</p>
-      <div className="cover-gold-rule mb-4" />
-      <h1 className="cover-title">Vy Anh</h1>
-      <div className="cover-gold-rule mt-4 mb-4" />
-      <p className="cover-class">CLASS OF 2026</p>
-    </div>
-    <div className="cover-ornament-bottom" />
-    <div className="cover-tap-hint">
-      <span className="tap-hint-text">CHẠM ĐỂ MỞ THIỆP</span>
-      <span className="tap-hint-arrow">›</span>
-    </div>
-    <div className="cover-sheen" />
-  </div>
-);
-
-const InvitationPage = ({ displayName, revealed }: { displayName: string; revealed: boolean }) => (
-  <div className="booklet-page page-ivory">
-    <div className="page-top-line" />
-    <div className="flex flex-col items-center h-full px-7 pt-8 pb-6">
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ duration: 0.55, delay: 0.08 }} className="w-full text-center">
-        <div className="page-eyebrow mb-4">TRÂN TRỌNG KÍNH MỜI</div>
-        <div className="page-gold-rule mb-5" />
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }} transition={{ duration: 0.55, delay: 0.22 }} className="w-full text-center mb-5">
-        <h2 className="recipient-name">{displayName}</h2>
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }} transition={{ duration: 0.55, delay: 0.38 }} className="w-full text-center flex-1 flex flex-col justify-center">
-        <div className="w-20 mx-auto mb-5">
-          <GradCapIllustration />
-        </div>
-        <p className="invitation-body">
-          Cảm ơn bạn đã là một phần trong hành trình của mình. Sự hiện diện của bạn sẽ khiến ngày đặc biệt này trở nên trọn vẹn hơn.
-        </p>
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1 } : { opacity: 0 }} transition={{ duration: 0.4, delay: 0.55 }} className="w-full">
-        <div className="page-gold-rule mt-5" />
-        <p className="page-number-label mt-3">01 / 03</p>
-      </motion.div>
-    </div>
-  </div>
-);
-
-const EventDetailsPage = ({ revealed, onCalendarClick }: { revealed: boolean; onCalendarClick: () => void }) => (
-  <div className="booklet-page page-ivory">
-    <div className="page-top-line" />
-    <div className="flex flex-col h-full px-7 pt-8 pb-6">
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }} transition={{ duration: 0.5, delay: 0.08 }}>
-        <div className="page-eyebrow mb-3 text-center">THÔNG TIN SỰ KIỆN</div>
-        <div className="page-gold-rule mb-6" />
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ duration: 0.5, delay: 0.18 }} className="detail-row mb-5">
-        <div className="detail-icon-wrap">
-          <Calendar size={13} style={{ color: "var(--gold)" }} />
-        </div>
-        <div>
-          <p className="detail-label-sm">NGÀY</p>
-          <p className="detail-date">15.11.2026</p>
-          <p className="detail-sub">Chủ Nhật · 08:00 ICT</p>
-        </div>
-      </motion.div>
-      <div className="thin-divider mb-5" />
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ duration: 0.5, delay: 0.28 }} className="detail-row mb-2">
-        <div className="detail-icon-wrap">
-          <MapPin size={13} style={{ color: "var(--gold)" }} />
-        </div>
-        <div className="flex-1">
-          <p className="detail-label-sm">ĐỊA ĐIỂM</p>
-          <p className="detail-venue">Đại học FPT</p>
-          <p className="detail-sub">TP. Hồ Chí Minh</p>
-        </div>
-        <a href="https://www.google.com/maps/search/?api=1&query=FPT+University+HCMC" target="_blank" rel="noopener noreferrer" className="map-link self-end">BẢN ĐỒ ↗</a>
-      </motion.div>
-      <div className="thin-divider mb-5" />
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ duration: 0.5, delay: 0.38 }} className="flex-1 flex flex-col justify-end">
-        <button id="btn-confirm-attendance" className="cta-btn w-full mb-2" onClick={onCalendarClick}>
-          <Calendar size={14} style={{ opacity: 0.7 }} />
-          Lưu lịch tham dự
-        </button>
-        <p className="page-number-label text-center mt-2">02 / 03</p>
-      </motion.div>
-    </div>
-  </div>
-);
-
-const FinalPage = ({ revealed, onRestart }: { revealed: boolean; onRestart: () => void }) => (
-  <div className="booklet-page page-navy final-page">
-    <div className="page-top-line-gold" />
-    <div className="flex flex-col items-center h-full px-8 pt-9 pb-7">
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }} transition={{ duration: 0.55, delay: 0.08 }} className="w-full text-center">
-        <AcademicSeal size={44} />
-        <div className="cover-gold-rule mt-4 mb-5" style={{ opacity: 0.4 }} />
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }} transition={{ duration: 0.55, delay: 0.22 }} className="flex-1 flex flex-col justify-center text-center">
-        <p className="final-quote-vi">
-          "Dù bạn đã đồng hành cùng mình ở chặng đường nào, mình luôn trân trọng sự hiện diện của bạn trong hành trình trưởng thành này."
-        </p>
-        <p className="final-quote-en mt-4">
-          "Wherever our paths have crossed, you have been part of my journey."
-        </p>
-      </motion.div>
-      <motion.div initial={false} animate={revealed ? { opacity: 1 } : { opacity: 0 }} transition={{ duration: 0.5, delay: 0.45 }} className="w-full text-center">
-        <div className="cover-gold-rule mb-5" style={{ opacity: 0.35 }} />
-        <p className="final-with-gratitude">WITH GRATITUDE</p>
-        <p className="final-signature">Vy Anh</p>
-        <p className="final-class">CLASS OF 2026</p>
-        <p className="page-number-label-light mt-4">03 / 03</p>
-        <button onClick={onRestart} className="restart-btn mt-5" aria-label="Xem lại từ đầu">↺ Xem lại</button>
-      </motion.div>
-    </div>
-  </div>
-);
-
-// ——— Booklet Viewer ———————————————————————————————————————
-
-type BookletPage = 0 | 1 | 2 | 3;
-const TOTAL_SPREADS = 3;
-const TRANSITION_MS = 900;
-
-function useReducedMotion() {
-  const mq = typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
-  const [reduced, setReduced] = useState(mq?.matches ?? false);
-  useEffect(() => {
-    if (!mq) return;
-    const handler = () => setReduced(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [mq]);
-  return reduced;
-}
-
-const BookletViewer = ({ displayName, onCalendarClick }: { displayName: string; onCalendarClick: () => void }) => {
-  const [page, setPage] = useState<BookletPage>(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const reducedMotion = useReducedMotion();
-  const [revealed, setRevealed] = useState<boolean[]>([false, false, false, false]);
-
-  const revealPage = useCallback((idx: number) => {
-    setRevealed((prev) => {
-      if (prev[idx]) return prev;
-      const next = [...prev];
-      next[idx] = true;
-      return next;
-    });
-  }, []);
-
-  const navigateTo = useCallback((target: BookletPage) => {
-    if (isAnimating || target === page) return;
-    if (target < 0 || target > TOTAL_SPREADS) return;
-    setIsAnimating(true);
-    setPage(target);
-    const delay = reducedMotion ? 0 : TRANSITION_MS;
-    setTimeout(() => {
-      setIsAnimating(false);
-      revealPage(target);
-      if (target === 3) {
-        setTimeout(() => setShowConfetti(true), 400);
-        setTimeout(() => setShowConfetti(false), 5000);
-      }
-    }, delay);
-  }, [isAnimating, page, reducedMotion, revealPage]);
-
-  const goNext = useCallback(() => { if (page < TOTAL_SPREADS) navigateTo((page + 1) as BookletPage); }, [page, navigateTo]);
-  const goPrev = useCallback(() => { if (page > 0) navigateTo((page - 1) as BookletPage); }, [page, navigateTo]);
-
-  const handleRestart = useCallback(() => {
-    setRevealed([false, false, false, false]);
-    setShowConfetti(false);
-    navigateTo(0);
-  }, [navigateTo]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev]);
-
-  const touchStartX = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 40) return;
-    if (dx < 0) goNext();
-    else goPrev();
-  };
-
-  const dur = reducedMotion ? 0 : TRANSITION_MS / 1000;
-  const pageStyle = (angle: number) => ({
-    transform: `rotateY(${angle}deg)`,
-    transition: reducedMotion ? "none" : `transform ${dur}s cubic-bezier(0.645, 0.045, 0.355, 1.000)`,
-  });
-
-  const coverAngle = page >= 1 ? -180 : 0;
-  const p1Angle = page >= 2 ? -180 : 0;
-  const p2Angle = page >= 3 ? -180 : 0;
-
-  return (
-    <div className="booklet-scene" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} aria-label="Graduation invitation booklet">
-      <div className="booklet-wrap">
-        <div className="booklet-spine" />
-        <div className="booklet-shadow" />
-
-        {/* Leaf 3 — Final page (always behind) */}
-        <div className="booklet-leaf booklet-leaf--back" style={{ zIndex: 1 }}>
-          <div className="leaf-front">
-            <FinalPage revealed={revealed[3]} onRestart={handleRestart} />
-            <GoldConfetti active={showConfetti} />
-          </div>
-          <div className="leaf-back page-ivory-back" />
-        </div>
-
-        {/* Leaf 2 — Event details */}
-        <div className="booklet-leaf" style={{ zIndex: 2, ...pageStyle(p2Angle) }}>
-          <div className="leaf-front">
-            <EventDetailsPage revealed={revealed[2]} onCalendarClick={onCalendarClick} />
-          </div>
-          <div className="leaf-back page-ivory-back">
-            <div className="leaf-back-paper-edge" />
-          </div>
-        </div>
-
-        {/* Leaf 1 — Invitation */}
-        <div className="booklet-leaf" style={{ zIndex: 3, ...pageStyle(p1Angle) }}>
-          <div className="leaf-front">
-            <InvitationPage displayName={displayName} revealed={revealed[1]} />
-          </div>
-          <div className="leaf-back page-ivory-back">
-            <div className="leaf-back-paper-edge" />
-          </div>
-        </div>
-
-        {/* Leaf 0 — Cover */}
-        <div className="booklet-leaf booklet-leaf--cover" style={{ zIndex: 4, ...pageStyle(coverAngle) }}>
-          <div className="leaf-front">
-            <CoverPage onClick={() => page === 0 && !isAnimating && goNext()} />
-          </div>
-          <div className="leaf-back page-ivory-back inside-cover">
-            <div className="inside-cover-content" />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="booklet-nav" role="navigation" aria-label="Điều hướng thiệp">
-        <button
-          className={`nav-btn nav-btn--prev ${page === 0 ? "nav-btn--hidden" : ""}`}
-          onClick={goPrev}
-          disabled={isAnimating || page === 0}
-          aria-label="Trang trước"
-        >
-          <ChevronLeft size={16} />
-          <span className="nav-label">TRANG TRƯỚC</span>
-        </button>
-
-        <div className="page-indicator" aria-live="polite">
-          <span className="page-ind-text">
-            {page === 0 ? "BÌA" : `${String(page).padStart(2, "0")} / ${String(TOTAL_SPREADS).padStart(2, "0")}`}
-          </span>
-          <div className="page-dots">
-            {([0, 1, 2, 3] as BookletPage[]).map((i) => (
-              <button
-                key={i}
-                className={`page-dot ${page === i ? "page-dot--active" : ""}`}
-                onClick={() => !isAnimating && navigateTo(i)}
-                aria-label={`Trang ${i === 0 ? "bìa" : i}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        <button
-          className={`nav-btn nav-btn--next ${page === TOTAL_SPREADS ? "nav-btn--hidden" : ""}`}
-          onClick={goNext}
-          disabled={isAnimating || page === TOTAL_SPREADS}
-          aria-label="Trang tiếp"
-        >
-          <span className="nav-label">TRANG TIẾP</span>
-          <ChevronRight size={16} />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ——— Main App —————————————————————————————————————————————
-
 export default function App() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const [introKey, setIntroKey] = useState(0);
+  const [introVisible, setIntroVisible] = useState(true);
+  const showIntro = introVisible && !reducedMotion;
+  const bookletRef = useRef<BookletViewerHandle>(null);
+  const bookStageRef = useRef<HTMLDivElement>(null);
+  const [bookStage, setBookStage] = useState<HTMLElement | null>(null);
 
   const userName = (() => {
     try {
@@ -634,11 +236,36 @@ export default function App() {
     }
   }, []);
 
+  const dismissIntro = useCallback(() => {
+    setIntroVisible(false);
+  }, []);
+
+  useEffect(() => {
+    if (bookStageRef.current) {
+      setBookStage(bookStageRef.current);
+    }
+  }, []);
+
+  const handleOpenBook = useCallback(() => {
+    setIntroVisible(false);
+    bookletRef.current?.openCover();
+    if (isAudioOn) {
+      postYouTubeCommand("unMute");
+      postYouTubeCommand("playVideo");
+    }
+  }, [isAudioOn, postYouTubeCommand]);
+
+  const handleRestartExperience = useCallback(() => {
+    bookletRef.current?.goToStart();
+    setIntroVisible(true);
+    setIntroKey((k) => k + 1);
+  }, []);
+
   return (
     <div className="min-h-screen w-full page-bg relative" style={{ color: "var(--ink)" }}>
-      <PetalEffect />
+      <div className="film-grain" aria-hidden="true" />
+      <PetalEffect reducedMotion={reducedMotion} />
 
-      {/* —— Hidden YouTube audio player —— */}
       <iframe
         ref={youtubePlayerRef}
         title="Background music"
@@ -652,7 +279,6 @@ export default function App() {
         }}
       />
 
-      {/* —— Music widget —— */}
       <div className="fixed top-5 right-5 z-50 music-widget overflow-hidden">
         <div className="flex items-center">
           <div className="px-4 py-2.5 flex items-center gap-3">
@@ -679,12 +305,32 @@ export default function App() {
         </div>
       </div>
 
-      {/* —— Booklet —— */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-20">
-        <BookletViewer displayName={displayName} onCalendarClick={handleCalendarClick} />
+      <div
+        ref={bookStageRef}
+        className={`book-stage relative z-10 flex items-center justify-center min-h-screen px-4 py-20${showIntro ? " is-intro" : ""}`}
+      >
+        <BookletViewer
+          ref={bookletRef}
+          displayName={displayName}
+          onCalendarClick={handleCalendarClick}
+          onRestartExperience={handleRestartExperience}
+          interactive={!showIntro}
+        />
       </div>
 
-      {/* —— Calendar Modal —— */}
+      <AnimatePresence>
+        {showIntro && (
+          <CinematicIntro
+            key={introKey}
+            bookStage={bookStage}
+            reducedMotion={reducedMotion}
+            replay={introKey > 0}
+            onOpen={handleOpenBook}
+            onDismiss={dismissIntro}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showCalendarModal && (
           <CalendarModal onClose={() => setShowCalendarModal(false)} />

@@ -11,10 +11,18 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-export const firebaseApp = initializeApp(firebaseConfig);
+const hasValidConfig = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== "MY_FIREBASE_API_KEY" &&
+  !firebaseConfig.apiKey.includes("MY_")
+);
 
-export const firebaseAnalytics = isSupported().then((supported) => {
-  if (!supported) return null;
+export const firebaseApp = hasValidConfig ? initializeApp(firebaseConfig) : null;
 
-  return getAnalytics(firebaseApp);
-});
+export const firebaseAnalytics = hasValidConfig
+  ? isSupported().then((supported) => {
+      if (!supported || !firebaseApp) return null;
+      return getAnalytics(firebaseApp);
+    })
+  : Promise.resolve(null);
+
