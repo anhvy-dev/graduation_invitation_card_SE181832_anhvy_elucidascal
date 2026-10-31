@@ -16,11 +16,11 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { fireGraduationConfetti, resetGraduationConfetti } from "../lib/celebration";
 import { playPageReveal, resetPageReveals } from "../lib/pageReveal";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import type { FacebookUserProfile } from "../types/facebook";
 
 type BookletPage = 0 | 1 | 2 | 3;
 const LAST_PAGE = 3;
@@ -68,20 +68,14 @@ const AcademicEmblem = ({ size = 80 }: { size?: number }) => (
   </svg>
 );
 
-const FacebookIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
 const CoverPage = ({
-  fbUser,
-  onFacebookLogin,
-  isLoggingInFb,
+  onOpenNameModal,
+  hasCustomName,
+  displayName,
 }: {
-  fbUser?: FacebookUserProfile | null;
-  onFacebookLogin?: () => void;
-  isLoggingInFb?: boolean;
+  onOpenNameModal?: () => void;
+  hasCustomName?: boolean;
+  displayName?: string;
 }) => (
   <div className="booklet-page booklet-cover">
     <div className="cover-border" />
@@ -108,31 +102,28 @@ const CoverPage = ({
       <span className="tap-hint-text">CHẠM ĐỂ MỞ THIỆP</span>
       <span className="tap-hint-arrow">›</span>
     </div>
-    {onFacebookLogin && (
+
+    {onOpenNameModal && (
       <div className="mt-3 flex justify-center z-20">
-        {!fbUser ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onFacebookLogin();
-            }}
-            disabled={isLoggingInFb}
-            className="cover-fb-btn"
-          >
-            <FacebookIcon size={13} />
-            <span>{isLoggingInFb ? "Đang kết nối..." : "Đăng nhập với Facebook"}</span>
-          </button>
-        ) : (
-          <div className="cover-fb-connected">
-            {fbUser.picture?.data?.url && (
-              <img src={fbUser.picture.data.url} alt="" className="cover-fb-avatar" />
-            )}
-            <span>Chào mừng, <strong>{fbUser.name}</strong></span>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNameModal();
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#FAF8F3] shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+          style={{
+            background: "rgba(20, 36, 58, 0.75)",
+            border: "1px solid rgba(214, 180, 119, 0.4)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          <Sparkles size={12} style={{ color: "var(--gold)" }} />
+          <span>{hasCustomName ? `Tên bạn: ${displayName}` : "Ghi tên của bạn ✨"}</span>
+        </button>
       </div>
     )}
+
     <div className="cover-sheen" />
     <div className="cover-gold-sweep" aria-hidden="true">
       <span className="cover-sweep-beam" />
@@ -296,11 +287,11 @@ const EventDetailsPage = ({
       </div>
       <div className="thin-divider mb-3" />
       <div className="mt-auto space-y-2" data-reveal="line">
-        <button id="btn-confirm-attendance" className="cta-btn w-full" type="button" onClick={onRsvpClick}>
+        <button id="btn-confirm-attendance" className="cta-btn w-full cursor-pointer" type="button" onClick={onRsvpClick}>
           <CheckCircle2 size={14} style={{ color: "var(--gold)" }} />
           Xác nhận tham dự (RSVP)
         </button>
-        <button id="btn-save-calendar" className="cta-btn-secondary w-full" type="button" onClick={onCalendarClick}>
+        <button id="btn-save-calendar" className="cta-btn-secondary w-full cursor-pointer" type="button" onClick={onCalendarClick}>
           <Calendar size={13} style={{ opacity: 0.7 }} />
           Lưu vào lịch
         </button>
@@ -323,7 +314,7 @@ const FinalPage = ({ onRestart }: { onRestart: () => void }) => (
         </div>
       </figure>
       <p className="final-quote-vi text-center mt-3" data-reveal="line">
-        "Dù bạn đã đồng hành cùng mình ở chặng đường nào, mình luôn trân trọng sự hiện diện của bạn trong hành trình trưởng thành này."
+        &ldquo;Dù bạn đã đồng hành cùng mình ở chặng đường nào, mình luôn trân trọng sự hiện diện của bạn trong hành trình trưởng thành này.&rdquo;
       </p>
       <div className="w-full text-center mt-auto">
         <div className="cover-gold-rule mb-4" style={{ opacity: 0.35 }} data-reveal="line" />
@@ -338,7 +329,7 @@ const FinalPage = ({ onRestart }: { onRestart: () => void }) => (
         </div>
         <p className="final-class" data-reveal="line">CLASS OF 2026</p>
         <p className="page-number-label-light mt-3" data-reveal="line">03 / 03</p>
-        <button onClick={onRestart} className="restart-btn mt-4" type="button" aria-label="Xem lại từ đầu">
+        <button onClick={onRestart} className="restart-btn mt-4 cursor-pointer" type="button" aria-label="Xem lại từ đầu">
           ↺ Xem lại
         </button>
       </div>
@@ -355,137 +346,146 @@ type FlipBookEngineProps = {
   onPage: (page: BookletPage) => void;
   onAnimating: (busy: boolean) => void;
   onBound: (book: PageFlip | null) => void;
-  fbUser?: FacebookUserProfile | null;
-  onFacebookLogin?: () => void;
-  isLoggingInFb?: boolean;
+  onOpenNameModal?: () => void;
+  hasCustomName?: boolean;
 };
 
-const FlipBookEngine = memo(function FlipBookEngine({
-  displayName,
-  reducedMotion,
-  onCalendarClick,
-  onRsvpClick,
-  onRestart,
-  onPage,
-  onAnimating,
-  onBound,
-  fbUser,
-  onFacebookLogin,
-  isLoggingInFb,
-}: FlipBookEngineProps) {
-  const bookElRef = useRef<HTMLDivElement>(null);
-  const revealedRef = useRef<Set<number>>(new Set());
-  const confettiRef = useRef(false);
-  const lastIndexRef = useRef(0);
+const FlipBookEngine = memo(
+  function FlipBookEngine({
+    displayName,
+    reducedMotion,
+    onCalendarClick,
+    onRsvpClick,
+    onRestart,
+    onPage,
+    onAnimating,
+    onBound,
+    onOpenNameModal,
+    hasCustomName,
+  }: FlipBookEngineProps) {
+    const bookElRef = useRef<HTMLDivElement>(null);
+    const revealedRef = useRef<Set<number>>(new Set());
+    const confettiRef = useRef(false);
+    const lastIndexRef = useRef(0);
 
-  useLayoutEffect(() => {
-    const el = bookElRef.current;
-    if (!el) return;
+    useLayoutEffect(() => {
+      const el = bookElRef.current;
+      if (!el) return;
 
-    // Clean up any stale wrappers if left behind
-    el.querySelectorAll(".stf__wrapper, .stf__block").forEach((node) => {
-      node.querySelectorAll(".flip-page").forEach((p) => el.appendChild(p));
-      node.remove();
-    });
+      // Clean up any stale wrappers if left behind
+      el.querySelectorAll(".stf__wrapper, .stf__block").forEach((node) => {
+        node.querySelectorAll(".flip-page").forEach((p) => el.appendChild(p));
+        node.remove();
+      });
 
-    const pages = el.querySelectorAll<HTMLElement>(".flip-page");
-    if (!pages || pages.length < 2) return;
+      const pages = el.querySelectorAll<HTMLElement>(".flip-page");
+      if (!pages || pages.length < 2) return;
 
-    const pageFlip = new PageFlip(el, {
-      width: 390,
-      height: 560,
-      size: "stretch",
-      minWidth: 280,
-      maxWidth: 440,
-      minHeight: 460,
-      maxHeight: 640,
-      showCover: true,
-      drawShadow: true,
-      flippingTime: reducedMotion ? 1 : 1000,
-      usePortrait: true,
-      startZIndex: 2,
-      autoSize: true,
-      maxShadowOpacity: 0.42,
-      mobileScrollSupport: true,
-      swipeDistance: 36,
-      clickEventForward: true,
-      useMouseEvents: true,
-      disableFlipByClick: false,
-    });
+      const pageFlip = new PageFlip(el, {
+        width: 390,
+        height: 560,
+        size: "stretch",
+        minWidth: 280,
+        maxWidth: 440,
+        minHeight: 460,
+        maxHeight: 640,
+        showCover: true,
+        drawShadow: true,
+        flippingTime: reducedMotion ? 1 : 1000,
+        usePortrait: true,
+        startZIndex: 2,
+        autoSize: true,
+        maxShadowOpacity: 0.42,
+        mobileScrollSupport: true,
+        swipeDistance: 36,
+        clickEventForward: true,
+        useMouseEvents: true,
+        disableFlipByClick: false,
+      });
 
-    const settle = (idx: number) => {
-      onPage(idx as BookletPage);
-      if (idx === 0) {
-        revealedRef.current = new Set();
-        confettiRef.current = false;
-        lastIndexRef.current = 0;
-        resetPageReveals(el);
-        resetGraduationConfetti();
-        return;
-      }
-      if (revealedRef.current.has(idx)) return;
-      revealedRef.current.add(idx);
-      const direction = idx >= lastIndexRef.current ? 1 : -1;
-      lastIndexRef.current = idx;
-      playPageReveal(el, idx, reducedMotion, direction);
-      if (idx === LAST_PAGE && !confettiRef.current) {
-        confettiRef.current = true;
-        if (!reducedMotion) window.setTimeout(() => fireGraduationConfetti(), 680);
-      }
-    };
+      const settle = (idx: number) => {
+        onPage(idx as BookletPage);
+        if (idx === 0) {
+          revealedRef.current = new Set();
+          confettiRef.current = false;
+          lastIndexRef.current = 0;
+          resetPageReveals(el);
+          resetGraduationConfetti();
+          return;
+        }
+        if (revealedRef.current.has(idx)) return;
+        revealedRef.current.add(idx);
+        const direction = idx >= lastIndexRef.current ? 1 : -1;
+        lastIndexRef.current = idx;
+        playPageReveal(el, idx, reducedMotion, direction);
+        if (idx === LAST_PAGE && !confettiRef.current) {
+          confettiRef.current = true;
+          if (!reducedMotion) window.setTimeout(() => fireGraduationConfetti(), 680);
+        }
+      };
 
-    pageFlip.on("changeState", (e) => {
-      const state = e.data as FlipState;
-      onAnimating(state !== "read");
-      if (state === "read") {
-        settle(pageFlip.getCurrentPageIndex());
-      }
-    });
+      pageFlip.on("changeState", (e) => {
+        const state = e.data as FlipState;
+        onAnimating(state !== "read");
+        if (state === "read") {
+          settle(pageFlip.getCurrentPageIndex());
+        }
+      });
 
-    pageFlip.on("flip", (e) => {
-      onPage(Number(e.data) as BookletPage);
-    });
+      pageFlip.on("flip", (e) => {
+        onPage(Number(e.data) as BookletPage);
+      });
 
-    try {
-      pageFlip.loadFromHTML(pages);
-      onBound(pageFlip);
-    } catch (err) {
-      console.error("Error loading flip book:", err);
-    }
-
-    return () => {
-      onBound(null);
-      resetPageReveals(el);
       try {
-        pages.forEach((p) => {
-          if (p && el) el.appendChild(p);
-        });
-        pageFlip.destroy();
-      } catch {
-        /* already removed */
+        pageFlip.loadFromHTML(pages);
+        onBound(pageFlip);
+      } catch (err) {
+        console.error("Error loading flip book:", err);
       }
-    };
-  }, [displayName, reducedMotion, onCalendarClick, onRsvpClick, onRestart, onPage, onAnimating, onBound, fbUser, onFacebookLogin, isLoggingInFb]);
 
-  return (
-    <div className="flip-book-host">
-      <div ref={bookElRef} className="flip-book">
-        <div className="flip-page" data-density="hard" data-flip-index="0">
-          <CoverPage fbUser={fbUser} onFacebookLogin={onFacebookLogin} isLoggingInFb={isLoggingInFb} />
-        </div>
-        <div className="flip-page" data-flip-index="1">
-          <InvitationPage displayName={displayName} />
-        </div>
-        <div className="flip-page" data-flip-index="2">
-          <EventDetailsPage onCalendarClick={onCalendarClick} onRsvpClick={onRsvpClick} />
-        </div>
-        <div className="flip-page" data-density="hard" data-flip-index="3">
-          <FinalPage onRestart={onRestart} />
+      return () => {
+        onBound(null);
+        resetGraduationConfetti();
+        resetPageReveals(el);
+        try {
+          pages.forEach((p) => {
+            if (p && el) el.appendChild(p);
+          });
+          pageFlip.destroy();
+        } catch {
+          // Already removed
+        }
+      };
+    }, [displayName, reducedMotion, onCalendarClick, onRsvpClick, onRestart, onPage, onAnimating, onBound, onOpenNameModal, hasCustomName]);
+
+    return (
+      <div className="flip-book-host">
+        <div ref={bookElRef} className="flip-book">
+          <div className="flip-page" data-density="hard" data-flip-index="0">
+            <CoverPage
+              onOpenNameModal={onOpenNameModal}
+              hasCustomName={hasCustomName}
+              displayName={displayName}
+            />
+          </div>
+          <div className="flip-page" data-flip-index="1">
+            <InvitationPage displayName={displayName} />
+          </div>
+          <div className="flip-page" data-flip-index="2">
+            <EventDetailsPage onCalendarClick={onCalendarClick} onRsvpClick={onRsvpClick} />
+          </div>
+          <div className="flip-page" data-density="hard" data-flip-index="3">
+            <FinalPage onRestart={onRestart} />
+          </div>
         </div>
       </div>
-    </div>
-  );
-}, () => true);
+    );
+  },
+  (prev, next) =>
+    prev.displayName === next.displayName &&
+    prev.hasCustomName === next.hasCustomName &&
+    prev.reducedMotion === next.reducedMotion
+);
 
 type BookletViewerProps = {
   displayName: string;
@@ -493,9 +493,8 @@ type BookletViewerProps = {
   onRsvpClick: () => void;
   onRestartExperience: () => void;
   interactive?: boolean;
-  fbUser?: FacebookUserProfile | null;
-  onFacebookLogin?: () => void;
-  isLoggingInFb?: boolean;
+  onOpenNameModal?: () => void;
+  hasCustomName?: boolean;
 };
 
 export const BookletViewer = forwardRef<BookletViewerHandle, BookletViewerProps>(
@@ -506,9 +505,8 @@ export const BookletViewer = forwardRef<BookletViewerHandle, BookletViewerProps>
       onRsvpClick,
       onRestartExperience,
       interactive = true,
-      fbUser,
-      onFacebookLogin,
-      isLoggingInFb,
+      onOpenNameModal,
+      hasCustomName,
     },
     ref
   ) {
@@ -571,9 +569,8 @@ export const BookletViewer = forwardRef<BookletViewerHandle, BookletViewerProps>
             onPage={onPage}
             onAnimating={onAnimating}
             onBound={onBound}
-            fbUser={fbUser}
-            onFacebookLogin={onFacebookLogin}
-            isLoggingInFb={isLoggingInFb}
+            onOpenNameModal={onOpenNameModal}
+            hasCustomName={hasCustomName}
           />
         </div>
 

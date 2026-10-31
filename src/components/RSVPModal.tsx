@@ -1,16 +1,14 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { X, CheckCircle, Users, MessageSquare, Send, Sparkles } from "lucide-react";
-import { loginWithFacebook, verifyFacebookTokenOnServer } from "../lib/facebookSdk";
-import type { FacebookUserProfile } from "../types/facebook";
 import { fireGraduationConfetti } from "../lib/celebration";
 
 type RSVPModalProps = {
   isOpen: boolean;
   onClose: () => void;
   recipientName: string;
-  fbUser?: FacebookUserProfile | null;
-  onSetFbUser?: (user: FacebookUserProfile | null) => void;
+  prefillVisitorName?: string;
+  invitationMode?: "public" | "personalized";
 };
 
 type AttendanceStatus = "attending" | "declined";
@@ -26,103 +24,50 @@ const AcademicSeal = ({ size = 48 }: { size?: number }) => (
   </svg>
 );
 
-const FacebookIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
 export function RSVPModal({
   isOpen,
   onClose,
   recipientName,
-  fbUser: externalFbUser,
-  onSetFbUser,
+  prefillVisitorName,
+  invitationMode = "public",
 }: RSVPModalProps) {
-  // Use external fbUser if provided, or internal state as fallback
-  const [internalFbUser, setInternalFbUser] = useState<FacebookUserProfile | null>(null);
-  const fbUser = externalFbUser !== undefined ? externalFbUser : internalFbUser;
+  // Determine initial visitor name: prefillVisitorName -> recipientName (if not generic) -> empty
+  const initialName = (() => {
+    if (prefillVisitorName && prefillVisitorName.trim() && prefillVisitorName !== "Bạn thân mến") {
+      return prefillVisitorName.trim();
+    }
+    if (recipientName && recipientName.trim() && recipientName !== "Bạn thân mến") {
+      return recipientName.trim();
+    }
+    return "";
+  })();
 
-  const [visitorName, setVisitorName] = useState(fbUser?.name || "");
-  const [isEditingName, setIsEditingName] = useState(false);
+  const [visitorName, setVisitorName] = useState(initialName);
   const [attendance, setAttendance] = useState<AttendanceStatus>("attending");
   const [guestCount, setGuestCount] = useState<number>(1);
   const [wishes, setWishes] = useState("");
-
-  const [isLoggingInFb, setIsLoggingInFb] = useState(false);
-  const [fbError, setFbError] = useState<string | null>(null);
 
   // Form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Sync visitor name when fbUser changes or modal opens
+  // Sync visitor name when modal opens
   useEffect(() => {
-    if (fbUser?.name) {
-      setVisitorName(fbUser.name);
-    } else if (isOpen && !visitorName && recipientName && recipientName !== "Bạn thân mến") {
-      setVisitorName(recipientName);
+    if (isOpen) {
+      if (initialName && !visitorName) {
+        setVisitorName(initialName);
+      }
+      setSubmitError(null);
     }
-  }, [fbUser, isOpen, recipientName, visitorName]);
+  }, [isOpen, initialName, visitorName]);
 
   if (!isOpen) return null;
 
-  // Handle Facebook Login from inside modal (if not logged in upfront)
-  const handleFacebookLogin = async () => {
-    setIsLoggingInFb(true);
-    setFbError(null);
-
-    try {
-      const res = await loginWithFacebook();
-      if (res.success && res.user) {
-        if (onSetFbUser) {
-          onSetFbUser(res.user);
-        } else {
-          setInternalFbUser(res.user);
-        }
-        try {
-          localStorage.setItem("graduation_fb_user", JSON.stringify(res.user));
-        } catch {
-          // Ignore storage errors
-        }
-        setVisitorName(res.user.name);
-        setIsEditingName(false);
-
-        if (res.accessToken) {
-          verifyFacebookTokenOnServer(res.accessToken, res.user.id).catch((err) => {
-            console.warn("[FB Verify] Backend check warning:", err);
-          });
-        }
-      } else if (res.error) {
-        setFbError(res.error);
-      }
-    } catch (err) {
-      setFbError("Đăng nhập Facebook không thành công. Bạn vẫn có thể nhập tên bên dưới.");
-      console.error("[FB Login Error]", err);
-    } finally {
-      setIsLoggingInFb(false);
-    }
-  };
-
-  const handleDisconnectFb = () => {
-    if (onSetFbUser) {
-      onSetFbUser(null);
-    } else {
-      setInternalFbUser(null);
-    }
-    try {
-      localStorage.removeItem("graduation_fb_user");
-    } catch {
-      // Ignore
-    }
-    setIsEditingName(true);
-  };
-
-  // Handle RSVP Submit (Explicit user action only - never triggered automatically)
+  // Handle RSVP Submit (Explicit user action only)
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const finalName = visitorName.trim() || fbUser?.name || "";
+    const finalName = visitorName.trim();
     if (!finalName) {
       setSubmitError("Vui lòng nhập họ và tên của bạn.");
       return;
@@ -133,14 +78,16 @@ export function RSVPModal({
 
     const payload = {
       timestamp: new Date().toISOString(),
-      recipientInvitationName: recipientName,
+      recipientInvitationName: recipientName || "Bạn thân mến",
       visitorName: finalName,
       attendance: attendance === "attending" ? "Tham dự" : "Không thể tham dự",
       guestCount: attendance === "attending" ? guestCount : 0,
       wishes: wishes.trim(),
-      facebookVerified: !!fbUser,
-      facebookName: fbUser?.name || "",
-      facebookId: fbUser?.id || "",
+      invitationMode,
+      // Backward-compatible fields for Google Sheet column alignment
+      facebookVerified: false,
+      facebookName: "",
+      facebookId: "",
     };
 
     const webhookUrl = import.meta.env.VITE_RSVP_WEBHOOK_URL;
@@ -203,7 +150,7 @@ export function RSVPModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-black/5 transition-colors"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-black/5 transition-colors cursor-pointer"
           aria-label="Đóng"
         >
           <X size={16} />
@@ -217,7 +164,7 @@ export function RSVPModal({
                 <AcademicSeal size={42} />
               </div>
               <p className="text-[10px] tracking-[0.25em] font-medium uppercase" style={{ color: "var(--gold)" }}>
-                XÁC NHẬN THAM DỰ · RSVP
+                XÁC NHẬN THAM DỰ
               </p>
               <h2 className="text-xl sm:text-2xl font-serif italic text-navy mt-1" style={{ color: "var(--navy)" }}>
                 Lễ Tốt Nghiệp · Vy Anh
@@ -226,7 +173,11 @@ export function RSVPModal({
               {recipientName && (
                 <div
                   className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs"
-                  style={{ background: "rgba(214,180,119,0.12)", border: "1px solid rgba(214,180,119,0.25)", color: "var(--navy)" }}
+                  style={{
+                    background: "rgba(214,180,119,0.12)",
+                    border: "1px solid rgba(214,180,119,0.25)",
+                    color: "var(--navy)",
+                  }}
                 >
                   <span className="opacity-70">Thiệp mời gửi đến:</span>
                   <strong className="font-semibold">{recipientName}</strong>
@@ -236,91 +187,28 @@ export function RSVPModal({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
-              {/* User Identity Section */}
-              {fbUser ? (
-                /* Auto-recognized from Facebook login upfront - NO TYPING NEEDED! */
-                <div className="p-3.5 rounded-lg bg-emerald-50/90 border border-emerald-300 shadow-sm flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {fbUser.picture?.data?.url ? (
-                      <img
-                        src={fbUser.picture.data.url}
-                        alt={fbUser.name}
-                        className="w-10 h-10 rounded-full border-2 border-emerald-400 object-cover shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-sm">
-                        {fbUser.name[0]}
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-slate-900">{fbUser.name}</span>
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full border border-emerald-300">
-                          ✓ Facebook
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-emerald-800 font-medium mt-0.5">
-                        Tự động nhận diện từ tài khoản Facebook của bạn
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleDisconnectFb}
-                    className="text-[11px] text-slate-500 hover:text-slate-800 underline ml-2 shrink-0"
-                  >
-                    Đổi tài khoản
-                  </button>
-                </div>
-              ) : (
-                /* Not yet logged in upfront: allow 1-click FB login or manual name input */
-                <div className="space-y-3">
-                  <div
-                    className="p-3 rounded-lg text-left"
-                    style={{
-                      background: "rgba(255,255,255,0.7)",
-                      border: "1px solid rgba(214,180,119,0.25)",
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wider text-slate-600">
-                        Điền nhanh với Facebook
-                      </span>
-                      <Sparkles size={13} style={{ color: "var(--gold)" }} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleFacebookLogin}
-                      disabled={isLoggingInFb}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md text-white font-medium text-xs shadow-sm transition-all hover:brightness-105 active:scale-[0.99]"
-                      style={{ background: "#1877F2" }}
-                    >
-                      <FacebookIcon size={15} />
-                      <span>{isLoggingInFb ? "Đang kết nối Facebook..." : "Tiếp tục với Facebook"}</span>
-                    </button>
-                    {fbError && (
-                      <p className="text-[11px] text-rose-600 text-center mt-1.5 bg-rose-50 p-1.5 rounded">
-                        {fbError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                      Hoặc nhập họ và tên của bạn <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={visitorName}
-                      onChange={(e) => setVisitorName(e.target.value)}
-                      placeholder="Nhập họ và tên..."
-                      className="w-full px-3.5 py-2.5 rounded-md border text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                      style={{ borderColor: "rgba(214,180,119,0.4)" }}
-                    />
-                  </div>
-                </div>
-              )}
+              {/* Visitor Name Field */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>
+                    Họ và tên của bạn <span className="text-rose-500">*</span>
+                  </span>
+                  {initialName && visitorName === initialName && (
+                    <span className="text-[10px] font-normal text-amber-700 normal-case flex items-center gap-1">
+                      <Sparkles size={11} /> Tự động điền theo thiệp
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={visitorName}
+                  onChange={(e) => setVisitorName(e.target.value)}
+                  placeholder="Nhập họ và tên của bạn..."
+                  className="w-full px-3.5 py-2.5 rounded-md border text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  style={{ borderColor: "rgba(214,180,119,0.4)" }}
+                />
+              </div>
 
               {/* Attendance Options */}
               <div>
@@ -331,22 +219,20 @@ export function RSVPModal({
                   <button
                     type="button"
                     onClick={() => setAttendance("attending")}
-                    className={`py-2.5 px-3 rounded-md text-xs font-medium border text-center transition-all flex items-center justify-center gap-1.5 ${
-                      attendance === "attending"
+                    className={`py-2.5 px-3 rounded-md text-xs font-medium border text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer ${attendance === "attending"
                         ? "bg-emerald-50 border-emerald-400 text-emerald-900 ring-1 ring-emerald-400 font-bold"
                         : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <span>🎉</span> Sẽ tham dự
                   </button>
                   <button
                     type="button"
                     onClick={() => setAttendance("declined")}
-                    className={`py-2.5 px-3 rounded-md text-xs font-medium border text-center transition-all flex items-center justify-center gap-1.5 ${
-                      attendance === "declined"
+                    className={`py-2.5 px-3 rounded-md text-xs font-medium border text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer ${attendance === "declined"
                         ? "bg-slate-100 border-slate-400 text-slate-900 ring-1 ring-slate-400 font-bold"
                         : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <span>💌</span> Không thể tham dự
                   </button>
@@ -366,11 +252,10 @@ export function RSVPModal({
                         key={num}
                         type="button"
                         onClick={() => setGuestCount(num)}
-                        className={`flex-1 py-1.5 text-xs font-medium rounded border transition-colors ${
-                          guestCount === num
+                        className={`flex-1 py-1.5 text-xs font-medium rounded border transition-colors cursor-pointer ${guestCount === num
                             ? "bg-amber-100/70 border-amber-400 text-amber-950 font-bold"
                             : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         {num === 3 ? "3+ người" : `${num} người`}
                       </button>
@@ -405,7 +290,7 @@ export function RSVPModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-6 rounded-md font-semibold text-xs uppercase tracking-widest text-white shadow-md flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3 px-6 rounded-md font-semibold text-xs uppercase tracking-widest text-white shadow-md flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 style={{
                   background: "linear-gradient(135deg, #1A365D 0%, #0D1A2B 100%)",
                   border: "1px solid rgba(214,180,119,0.4)",
@@ -424,7 +309,7 @@ export function RSVPModal({
             </div>
 
             <h3 className="text-xl font-serif italic mb-1" style={{ color: "var(--navy)" }}>
-              Cảm ơn {visitorName || fbUser?.name}!
+              Cảm ơn {visitorName}!
             </h3>
             <p className="text-xs text-slate-600 max-w-xs mx-auto mb-5 leading-relaxed">
               {attendance === "attending"
@@ -436,7 +321,7 @@ export function RSVPModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-2.5 px-4 rounded-md font-medium text-xs tracking-wider text-white"
+                className="w-full py-2.5 px-4 rounded-md font-medium text-xs tracking-wider text-white cursor-pointer"
                 style={{ background: "var(--navy)" }}
               >
                 HOÀN TẤT & ĐÓNG
@@ -446,7 +331,7 @@ export function RSVPModal({
                 onClick={() => {
                   setSubmitted(false);
                 }}
-                className="text-xs text-slate-500 hover:text-slate-800 underline"
+                className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
               >
                 Chỉnh sửa phản hồi
               </button>

@@ -10,6 +10,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        privacyPolicy: path.resolve(__dirname, 'privacy-policy/index.html'),
+        dataDeletion: path.resolve(__dirname, 'data-deletion/index.html'),
+      },
+    },
+  },
   server: {
     hmr: process.env.DISABLE_HMR !== 'true',
   },
