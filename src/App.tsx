@@ -11,16 +11,30 @@ import {
 } from "lucide-react";
 import { CinematicIntro } from "./components/CinematicIntro";
 import { BookletViewer, type BookletViewerHandle } from "./components/BookletViewer";
+import { RSVPModal } from "./components/RSVPModal";
 import { useReducedMotion } from "./hooks/useReducedMotion";
+import {
+  loginWithFacebook,
+  verifyFacebookTokenOnServer,
+  redirectToFacebookOAuth,
+  handleOAuthRedirectCallback,
+} from "./lib/facebookSdk";
+import type { FacebookUserProfile } from "./types/facebook";
+
+const FacebookIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
 
 const EVENT_DETAILS = {
   title: "Lễ Tốt Nghiệp - Vy Anh | FPT University HCMC",
   description: "Lễ kỷ niệm Niên khóa 2026 – Đại học FPT, TP. Hồ Chí Minh",
-  location: "Đại học FPT, TP. Hồ Chí Minh",
-  startUtc: "20261115T010000Z",
-  endUtc: "20261115T050000Z",
-  startLocal: "20261115T080000",
-  endLocal: "20261115T120000",
+  location: "FPT University, Ho Chi Minh City, Vietnam",
+  startUtc: "20261107T093000Z",
+  endUtc: "20261107T133000Z",
+  startLocal: "20261107T163000",
+  endLocal: "20261107T203000",
 };
 
 function buildGoogleCalendarUrl(): string {
@@ -168,7 +182,7 @@ const CalendarModal = ({ onClose }: { onClose: () => void }) => (
         </button>
       </div>
       <p className="text-center text-[10px] mt-6 tracking-widest" style={{ color: "var(--slate-light)" }}>
-        15 · 11 · 2026 &nbsp;·&nbsp; 08:00 ICT
+        07 · 11 · 2026 &nbsp;·&nbsp; 16:30 ICT
       </p>
     </motion.div>
   </motion.div>
@@ -176,13 +190,86 @@ const CalendarModal = ({ onClose }: { onClose: () => void }) => (
 
 export default function App() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showRsvpModal, setShowRsvpModal] = useState(false);
   const reducedMotion = useReducedMotion();
   const [introKey, setIntroKey] = useState(0);
   const [introVisible, setIntroVisible] = useState(true);
   const showIntro = introVisible && !reducedMotion;
   const bookletRef = useRef<BookletViewerHandle>(null);
-  const bookStageRef = useRef<HTMLDivElement>(null);
-  const [bookStage, setBookStage] = useState<HTMLElement | null>(null);
+  const [bookStage, setBookStage] = useState<HTMLDivElement | null>(null);
+  const bookStageRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      setBookStage(node);
+    }
+  }, []);
+
+  // Upfront Facebook User state (persisted in localStorage)
+  const [fbUser, setFbUser] = useState<FacebookUserProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem("graduation_fb_user");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isLoggingInFb, setIsLoggingInFb] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [skipRedirect, setSkipRedirect] = useState(() => {
+    try {
+      return (
+        sessionStorage.getItem("fb_skip_auth") === "1" ||
+        new URLSearchParams(window.location.search).get("guest") === "true"
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  // Handle upfront auto-redirect to Facebook OAuth or OAuth callback
+  useEffect(() => {
+    let alive = true;
+
+    async function checkAuthFlow() {
+      // 1. Check if returning from Facebook OAuth redirect with access_token
+      const result = await handleOAuthRedirectCallback();
+      if (result.handled) {
+        if (result.user && alive) {
+          setFbUser(result.user);
+        } else if (result.error && alive) {
+          setSkipRedirect(true);
+        }
+        if (alive) setIsCheckingAuth(false);
+        return;
+      }
+
+      // 2. If already logged in from previous visit
+      if (fbUser) {
+        if (alive) setIsCheckingAuth(false);
+        return;
+      }
+
+      // 3. If user clicked skip or has guest mode param
+      if (skipRedirect) {
+        if (alive) setIsCheckingAuth(false);
+        return;
+      }
+
+      // 4. Directly redirect to Facebook OAuth dialog!
+      redirectToFacebookOAuth();
+    }
+
+    checkAuthFlow();
+
+    return () => {
+      alive = false;
+    };
+  }, [fbUser, skipRedirect]);
+
+  const handleSkipAuth = () => {
+    sessionStorage.setItem("fb_skip_auth", "1");
+    setSkipRedirect(true);
+    setIsCheckingAuth(false);
+  };
 
   const userName = (() => {
     try {
@@ -193,12 +280,41 @@ export default function App() {
     }
   })();
 
-  const displayName = userName || "Bạn thân mến";
+  // Priority: Facebook logged-in name -> URL query param (?to=...) -> "Bạn thân mến"
+  const displayName = fbUser?.name || userName || "Bạn thân mến";
 
-  const INVITATION_VIDEO_ID = "b0A0d_Q8I40";
+  const handleFacebookLogin = useCallback(async () => {
+    setIsLoggingInFb(true);
+    try {
+      const res = await loginWithFacebook();
+      if (res.success && res.user) {
+        setFbUser(res.user);
+        try {
+          localStorage.setItem("graduation_fb_user", JSON.stringify(res.user));
+        } catch {
+          // Ignore
+        }
+
+        // Smoothly open cover to Page 1 so visitor immediately sees their personalized name
+        setTimeout(() => {
+          bookletRef.current?.openCover();
+        }, 350);
+
+        if (res.accessToken) {
+          verifyFacebookTokenOnServer(res.accessToken, res.user.id).catch(console.warn);
+        }
+      }
+    } catch (err) {
+      console.error("[FB Login Error]", err);
+    } finally {
+      setIsLoggingInFb(false);
+    }
+  }, []);
+
+  const INVITATION_VIDEO_ID = "5be9O0qskqU";
   const YOUTUBE_EMBED_URL = `https://www.youtube.com/embed/${INVITATION_VIDEO_ID}?enablejsapi=1&autoplay=1&mute=1&controls=0&loop=1&playlist=${INVITATION_VIDEO_ID}&rel=0&modestbranding=1&iv_load_policy=3`;
-  const SONG_TITLE = "#14 Happy Journey";
-  const SONG_ARTIST = "Genshin Impact OST";
+  const SONG_TITLE = "When the Flowers";
+  const SONG_ARTIST = "TeamMusicCreative";
 
   const [isAudioOn, setIsAudioOn] = useState(true);
   const youtubePlayerRef = useRef<HTMLIFrameElement | null>(null);
@@ -240,12 +356,6 @@ export default function App() {
     setIntroVisible(false);
   }, []);
 
-  useEffect(() => {
-    if (bookStageRef.current) {
-      setBookStage(bookStageRef.current);
-    }
-  }, []);
-
   const handleOpenBook = useCallback(() => {
     setIntroVisible(false);
     bookletRef.current?.openCover();
@@ -260,6 +370,61 @@ export default function App() {
     setIntroVisible(true);
     setIntroKey((k) => k + 1);
   }, []);
+
+  const isReturningFromOAuth =
+    typeof window !== "undefined" && window.location.hash.includes("access_token");
+
+  if (!fbUser && !skipRedirect) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 page-bg text-center relative z-50">
+        <div className="film-grain" aria-hidden="true" />
+        <div
+          className="relative z-10 max-w-sm w-full p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center"
+          style={{
+            background: "linear-gradient(180deg, #FDFBF7 0%, #F5EFEB 100%)",
+            border: "1px solid rgba(214,180,119,0.4)",
+            boxShadow: "0 25px 60px -15px rgba(13,26,43,0.5), 0 0 0 1px rgba(214,180,119,0.25)",
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
+            style={{ background: "rgba(214,180,119,0.12)" }}
+          >
+            <AcademicSeal size={48} />
+          </div>
+
+          <p className="text-[10px] tracking-[0.25em] font-semibold uppercase" style={{ color: "var(--gold)" }}>
+            LỄ TỐT NGHIỆP · NIÊN KHÓA 2026
+          </p>
+          <h1 className="mt-1 text-2xl font-serif italic" style={{ color: "var(--navy)" }}>
+            Vy Anh
+          </h1>
+          <div className="w-12 h-px my-3" style={{ background: "rgba(214,180,119,0.5)" }} />
+
+          <div className="mt-4 flex items-center justify-center gap-2 text-blue-700">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
+            <span className="text-xs font-semibold">
+              {isReturningFromOAuth
+                ? "Đang xác thực thông tin từ Facebook..."
+                : "Đang chuyển hướng sang Facebook..."}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-500 mt-2">
+            Tự động lấy thông tin từ Facebook để cá nhân hóa thiệp mời.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSkipAuth}
+            className="text-xs text-slate-400 hover:text-slate-700 underline mt-6 cursor-pointer"
+          >
+            Bỏ qua &amp; Xem thiệp với tư cách Khách ›
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full page-bg relative" style={{ color: "var(--ink)" }}>
@@ -313,8 +478,12 @@ export default function App() {
           ref={bookletRef}
           displayName={displayName}
           onCalendarClick={handleCalendarClick}
+          onRsvpClick={() => setShowRsvpModal(true)}
           onRestartExperience={handleRestartExperience}
           interactive={!showIntro}
+          fbUser={fbUser}
+          onFacebookLogin={handleFacebookLogin}
+          isLoggingInFb={isLoggingInFb}
         />
       </div>
 
@@ -336,6 +505,39 @@ export default function App() {
           <CalendarModal onClose={() => setShowCalendarModal(false)} />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showRsvpModal && (
+          <RSVPModal
+            isOpen={showRsvpModal}
+            onClose={() => setShowRsvpModal(false)}
+            recipientName={displayName}
+            fbUser={fbUser}
+            onSetFbUser={setFbUser}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating upfront Facebook Login Banner (if not logged in and intro finished) */}
+      {!fbUser && !showIntro && (
+        <aside
+          aria-label="Cá nhân hóa thiệp mời"
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 entrance-fb-banner flex items-center gap-2.5 px-4 py-2 rounded-full shadow-2xl"
+        >
+          <span className="text-[11px] font-medium text-slate-200 hidden sm:inline">
+            🎓 Nhận thiệp mang tên bạn:
+          </span>
+          <button
+            type="button"
+            onClick={handleFacebookLogin}
+            disabled={isLoggingInFb}
+            className="entrance-fb-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow transition-all hover:brightness-110 active:scale-95"
+          >
+            <FacebookIcon size={13} />
+            <span>{isLoggingInFb ? "Đang kết nối..." : "Đăng nhập Facebook"}</span>
+          </button>
+        </aside>
+      )}
     </div>
   );
 }

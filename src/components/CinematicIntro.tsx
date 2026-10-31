@@ -35,6 +35,8 @@ export function CinematicIntro({
   const [phase, setPhase] = useState(0);
   const [hintOn, setHintOn] = useState(false);
 
+  const startedRef = useRef(false);
+
   useEffect(() => {
     const markReady = () => {
       if (readyRef.current) return;
@@ -50,7 +52,14 @@ export function CinematicIntro({
     }
 
     const root = rootRef.current;
-    if (!root || !bookStage) return;
+    if (!root) return;
+
+    // Resilient fallback: use bookStage prop or locate .book-stage directly in DOM
+    const stage = bookStage || (typeof document !== "undefined" ? document.querySelector<HTMLElement>(".book-stage") : null);
+
+    // Prevent restarting an already-playing intro if bookStage prop arrives late
+    if (startedRef.current) return;
+    startedRef.current = true;
     let alive = true;
 
     const ctx = gsap.context(() => {
@@ -60,20 +69,22 @@ export function CinematicIntro({
       const barTop    = root.querySelector(".intro-bar--top");
       const barBot    = root.querySelector(".intro-bar--bottom");
       const particles = root.querySelectorAll(".intro-dust");
-      const beam      = bookStage.querySelector(".cover-sweep-beam");
+      const beam      = stage ? stage.querySelector(".cover-sweep-beam") : null;
 
       gsap.set(grain,     { opacity: 0 });
       gsap.set(light,     { opacity: 0, scale: 0.12 });
       gsap.set(barTop,    { yPercent: -100 });
       gsap.set(barBot,    { yPercent: 100 });
       gsap.set(particles, { opacity: 0, scale: 0 });
-      gsap.set(bookStage, {
-        scale: 1.18,
-        y: 22,
-        filter: "blur(14px)",
-        opacity: 0.08,
-        transformOrigin: "center center",
-      });
+      if (stage) {
+        gsap.set(stage, {
+          scale: 1.18,
+          y: 22,
+          filter: "blur(14px)",
+          opacity: 0.08,
+          transformOrigin: "center center",
+        });
+      }
       if (beam) gsap.set(beam, { xPercent: -110, opacity: 0 });
 
       const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
@@ -89,13 +100,17 @@ export function CinematicIntro({
         .add(() => { if (alive) setPhase(4); }, 3.25)
         .to(veil, { opacity: 0, duration: 1.1, ease: "power2.inOut" }, 3.3)
         .to(barTop, { yPercent: -100, duration: 0.85, ease: "power2.in" }, 3.25)
-        .to(barBot, { yPercent: 100, duration: 0.85, ease: "power2.in" }, 3.25)
-        .to(bookStage, {
+        .to(barBot, { yPercent: 100, duration: 0.85, ease: "power2.in" }, 3.25);
+
+      if (stage) {
+        tl.to(stage, {
           scale: 1, y: 0, filter: "blur(0px)", opacity: 1,
           duration: 1.35, ease: "power3.out",
         }, 3.22)
-        .add(() => { gsap.set(bookStage, { clearProps: "filter" }); }, 4.55)
-        .to(grain, { opacity: 0.18, duration: 0.7 }, 4.88);
+        .add(() => { gsap.set(stage, { clearProps: "filter" }); }, 4.55);
+      }
+
+      tl.to(grain, { opacity: 0.18, duration: 0.7 }, 4.88);
 
       if (beam) {
         tl.to(beam, { xPercent: 220, opacity: 1, duration: 1.1, ease: "power2.inOut" }, 4.4)
@@ -107,8 +122,9 @@ export function CinematicIntro({
 
     return () => {
       alive = false;
+      startedRef.current = false;
       ctx.revert();
-      if (bookStage) gsap.set(bookStage, { clearProps: "all" });
+      if (stage) gsap.set(stage, { clearProps: "all" });
     };
   }, [bookStage, reducedMotion]);
 

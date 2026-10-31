@@ -12,18 +12,21 @@ import { PageFlip } from "page-flip";
 import {
   Calendar,
   MapPin,
+  Phone,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
 } from "lucide-react";
 import { fireGraduationConfetti, resetGraduationConfetti } from "../lib/celebration";
 import { playPageReveal, resetPageReveals } from "../lib/pageReveal";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import type { FacebookUserProfile } from "../types/facebook";
 
 type BookletPage = 0 | 1 | 2 | 3;
 const LAST_PAGE = 3;
 const PHOTOS = {
-  look: "/assets/look.png",
-  campus: "/assets/SHHH.jpg",
+  look: "/assets/look.jpg",
+  campus: "/assets/Truong-Dai-hoc-FPT-TP.HCM_.jpeg",
   diploma: "/assets/SE181832_1.jpg",
 };
 
@@ -65,25 +68,71 @@ const AcademicEmblem = ({ size = 80 }: { size?: number }) => (
   </svg>
 );
 
-const CoverPage = () => (
+const FacebookIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
+const CoverPage = ({
+  fbUser,
+  onFacebookLogin,
+  isLoggingInFb,
+}: {
+  fbUser?: FacebookUserProfile | null;
+  onFacebookLogin?: () => void;
+  isLoggingInFb?: boolean;
+}) => (
   <div className="booklet-page booklet-cover">
     <div className="cover-border" />
     <div className="cover-ornament-top" />
     <div className="flex flex-col items-center mt-10 mb-2">
-      <AcademicEmblem size={72} />
+      <div className="cover-logo-wrap">
+        <img
+          src="/assets/fpt-logo.png"
+          alt="FPT University"
+          className="cover-logo-img"
+          draggable={false}
+        />
+      </div>
     </div>
     <div className="text-center px-8 mb-3">
       <p className="cover-eyebrow mb-3">LỄ TỐT NGHIỆP</p>
       <div className="cover-gold-rule mb-4" />
       <h1 className="cover-title">Vy Anh</h1>
       <div className="cover-gold-rule mt-4 mb-4" />
-      <p className="cover-class">CLASS OF 2026</p>
+      <p className="cover-class">K18 | 2022 – 2026</p>
     </div>
     <div className="cover-ornament-bottom" />
     <div className="cover-tap-hint">
       <span className="tap-hint-text">CHẠM ĐỂ MỞ THIỆP</span>
       <span className="tap-hint-arrow">›</span>
     </div>
+    {onFacebookLogin && (
+      <div className="mt-3 flex justify-center z-20">
+        {!fbUser ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFacebookLogin();
+            }}
+            disabled={isLoggingInFb}
+            className="cover-fb-btn"
+          >
+            <FacebookIcon size={13} />
+            <span>{isLoggingInFb ? "Đang kết nối..." : "Đăng nhập với Facebook"}</span>
+          </button>
+        ) : (
+          <div className="cover-fb-connected">
+            {fbUser.picture?.data?.url && (
+              <img src={fbUser.picture.data.url} alt="" className="cover-fb-avatar" />
+            )}
+            <span>Chào mừng, <strong>{fbUser.name}</strong></span>
+          </div>
+        )}
+      </div>
+    )}
     <div className="cover-sheen" />
     <div className="cover-gold-sweep" aria-hidden="true">
       <span className="cover-sweep-beam" />
@@ -92,35 +141,106 @@ const CoverPage = () => (
 );
 
 const InvitationPage = ({ displayName }: { displayName: string }) => (
-  <div className="booklet-page page-ivory">
+  <div className="booklet-page page-ivory editorial-page">
     <div className="page-top-line" />
-    <div className="flex flex-col items-center h-full px-7 pt-6 pb-5">
-      <div className="w-full text-center">
+    <div className="editorial-corner-mark" aria-hidden="true" />
+
+    <div className="editorial-content-wrapper">
+      {/* ── Left Column: Editorial Portrait Showcase (48-52%) ── */}
+      <div className="editorial-col-visual">
+        <div className="editorial-portrait-card" data-reveal="frame">
+          {/* Vertical decorative label */}
+          <div className="editorial-vertical-tag" aria-hidden="true" data-reveal="line">
+            <span>CLASS OF 2026</span>
+          </div>
+
+          {/* Portrait frame with champagne gold border & subtle paper texture */}
+          <figure className="editorial-photo-frame">
+            <div className="editorial-photo-clip" data-reveal="photo">
+              <img
+                src={PHOTOS.look}
+                alt="Vy Anh - Lễ tốt nghiệp Niên khóa 2026"
+                decoding="async"
+                draggable={false}
+                fetchPriority="high"
+                className="editorial-photo-img"
+              />
+              <div className="editorial-photo-sheen" aria-hidden="true" />
+            </div>
+          </figure>
+
+          {/* Small caption below portrait */}
+          <div className="editorial-caption-wrap" data-reveal="line">
+            <span className="editorial-caption-line" aria-hidden="true" />
+            <p className="editorial-caption">A JOURNEY WORTH REMEMBERING</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right Column: Typographic Invitation & Signature (48-52%) ── */}
+      <div className="editorial-col-text">
+        {/* Eyebrow */}
         <div className="reveal-mask reveal-mask--block">
-          <p className="page-eyebrow mb-3" data-reveal="mask">TRÂN TRỌNG KÍNH MỜI</p>
+          <p className="editorial-eyebrow" data-reveal="mask">
+            TRÂN TRỌNG KÍNH MỜI
+          </p>
         </div>
-        <div className="page-gold-rule mb-4" data-reveal="line" />
-      </div>
-      <div className="reveal-mask reveal-mask--block mb-3">
-        <h2 className="recipient-name text-center" data-reveal="mask">{displayName}</h2>
-      </div>
-      <figure className="photo-frame photo-frame--invite" data-reveal="frame">
-        <div className="photo-frame-clip" data-reveal="photo">
-          <img src={PHOTOS.look} alt="Vy Anh in graduation attire" decoding="async" draggable={false} fetchPriority="high" style={{ objectPosition: "center 12%" }} />
+
+        {/* Personalized Recipient Name - Typographic Focal Point */}
+        <div className="editorial-recipient-block">
+          <div className="reveal-mask reveal-mask--block">
+            <h2 className="editorial-recipient-name" data-reveal="mask">
+              {displayName}
+            </h2>
+          </div>
+          <div className="editorial-gold-divider" data-reveal="line" />
         </div>
-      </figure>
-      <p className="invitation-body mt-4" data-reveal="line">
-        Cảm ơn bạn đã là một phần trong hành trình của mình. Sự hiện diện của bạn sẽ khiến ngày đặc biệt này trở nên trọn vẹn hơn.
-      </p>
-      <div className="w-full mt-auto" data-reveal="line">
-        <div className="page-gold-rule mt-4" />
-        <p className="page-number-label mt-3">01 / 03</p>
+
+        {/* Vietnamese invitation message paragraphs */}
+        <div className="editorial-body-wrap" data-reveal="line">
+          <p className="editorial-body-text">
+            Có những cột mốc không chỉ đánh dấu sự kết thúc của một hành trình, mà còn mở ra những khởi đầu mới.
+          </p>
+          <p className="editorial-body-text">
+            Sau bốn năm với biết bao trải nghiệm, thử thách và kỷ niệm tại FPT University, cuối cùng mình cũng sắp được khoác lên chiếc áo cử nhân và bước lên sân khấu nhận tấm bằng tốt nghiệp.
+          </p>
+          <p className="editorial-body-text editorial-body-highlight">
+            Và trong khoảnh khắc đặc biệt ấy, mình thật sự mong có sự hiện diện của bạn.
+          </p>
+          <p className="editorial-body-text">
+            Cảm ơn bạn vì đã là một phần trong hành trình trưởng thành của mình, dù là một chặng đường dài hay chỉ một khoảnh khắc nhỏ.
+          </p>
+          <p className="editorial-body-text">
+            Hy vọng chúng ta sẽ cùng lưu lại những bức ảnh, những nụ cười và một kỷ niệm thật đẹp trong ngày hôm đó.
+          </p>
+        </div>
+
+        {/* Graceful signature section */}
+        <div className="editorial-signature-section" data-reveal="line">
+          <p className="editorial-gratitude-label">WITH GRATITUDE,</p>
+          <div className="editorial-signature-name-wrap">
+            <p className="editorial-sign-name">VY ANH</p>
+          </div>
+          <p className="editorial-class-tag">K18 | 2022 – 2026</p>
+        </div>
+
+        {/* Page Folio */}
+        <div className="editorial-folio" data-reveal="line">
+          <span className="editorial-folio-dot" aria-hidden="true" />
+          <span className="editorial-folio-num">01 / 03</span>
+        </div>
       </div>
     </div>
   </div>
 );
 
-const EventDetailsPage = ({ onCalendarClick }: { onCalendarClick: () => void }) => (
+const EventDetailsPage = ({
+  onCalendarClick,
+  onRsvpClick,
+}: {
+  onCalendarClick: () => void;
+  onRsvpClick: () => void;
+}) => (
   <div className="booklet-page page-ivory">
     <div className="page-top-line" />
     <div className="flex flex-col h-full px-7 pt-6 pb-5">
@@ -132,7 +252,7 @@ const EventDetailsPage = ({ onCalendarClick }: { onCalendarClick: () => void }) 
       </div>
       <figure className="photo-frame photo-frame--campus" data-reveal="frame">
         <div className="photo-frame-clip" data-reveal="photo">
-          <img src={PHOTOS.campus} alt="Graduation portrait at the campus gardens" loading="lazy" decoding="async" draggable={false} style={{ objectPosition: "center 35%" }} />
+          <img src={PHOTOS.campus} alt="Trường Đại học FPT TP.HCM" loading="lazy" decoding="async" draggable={false} style={{ objectPosition: "center center" }} />
         </div>
       </figure>
       <div className="detail-row mb-4 mt-4" data-reveal="line">
@@ -141,8 +261,8 @@ const EventDetailsPage = ({ onCalendarClick }: { onCalendarClick: () => void }) 
         </div>
         <div>
           <p className="detail-label-sm">NGÀY</p>
-          <p className="detail-date">15.11.2026</p>
-          <p className="detail-sub">Chủ Nhật · 08:00 ICT</p>
+          <p className="detail-date">07.11.2026</p>
+          <p className="detail-sub">Thứ Bảy · 16:30</p>
         </div>
       </div>
       <div className="thin-divider mb-4" />
@@ -157,13 +277,34 @@ const EventDetailsPage = ({ onCalendarClick }: { onCalendarClick: () => void }) 
         </div>
         <a href="https://www.google.com/maps/search/?api=1&query=FPT+University+HCMC" target="_blank" rel="noopener noreferrer" className="map-link self-end">BẢN ĐỒ ↗</a>
       </div>
-      <div className="thin-divider mb-4" />
-      <div className="mt-auto" data-reveal="line">
-        <button id="btn-confirm-attendance" className="cta-btn w-full mb-2" type="button" onClick={onCalendarClick}>
-          <Calendar size={14} style={{ opacity: 0.7 }} />
-          Lưu lịch tham dự
+      <div className="thin-divider mb-3" />
+      <div className="detail-row mb-3" data-reveal="line">
+        <div className="detail-icon-wrap">
+          <Phone size={13} style={{ color: "var(--gold)" }} />
+        </div>
+        <div className="flex-1">
+          <p className="detail-label-sm">LIÊN HỆ</p>
+          <div className="contact-row">
+            <span className="contact-name">Vy Anh</span>
+            <a href="tel:0397125134" className="contact-phone">0397&nbsp;125&nbsp;134</a>
+          </div>
+          <div className="contact-row">
+            <span className="contact-name">Vy Dũng</span>
+            <a href="tel:0585859108" className="contact-phone">0585&nbsp;859&nbsp;108</a>
+          </div>
+        </div>
+      </div>
+      <div className="thin-divider mb-3" />
+      <div className="mt-auto space-y-2" data-reveal="line">
+        <button id="btn-confirm-attendance" className="cta-btn w-full" type="button" onClick={onRsvpClick}>
+          <CheckCircle2 size={14} style={{ color: "var(--gold)" }} />
+          Xác nhận tham dự (RSVP)
         </button>
-        <p className="page-number-label text-center mt-2">02 / 03</p>
+        <button id="btn-save-calendar" className="cta-btn-secondary w-full" type="button" onClick={onCalendarClick}>
+          <Calendar size={13} style={{ opacity: 0.7 }} />
+          Lưu vào lịch
+        </button>
+        <p className="page-number-label text-center mt-1">02 / 03</p>
       </div>
     </div>
   </div>
@@ -209,20 +350,28 @@ type FlipBookEngineProps = {
   displayName: string;
   reducedMotion: boolean;
   onCalendarClick: () => void;
+  onRsvpClick: () => void;
   onRestart: () => void;
   onPage: (page: BookletPage) => void;
   onAnimating: (busy: boolean) => void;
   onBound: (book: PageFlip | null) => void;
+  fbUser?: FacebookUserProfile | null;
+  onFacebookLogin?: () => void;
+  isLoggingInFb?: boolean;
 };
 
 const FlipBookEngine = memo(function FlipBookEngine({
   displayName,
   reducedMotion,
   onCalendarClick,
+  onRsvpClick,
   onRestart,
   onPage,
   onAnimating,
   onBound,
+  fbUser,
+  onFacebookLogin,
+  isLoggingInFb,
 }: FlipBookEngineProps) {
   const bookElRef = useRef<HTMLDivElement>(null);
   const revealedRef = useRef<Set<number>>(new Set());
@@ -316,19 +465,19 @@ const FlipBookEngine = memo(function FlipBookEngine({
         /* already removed */
       }
     };
-  }, [displayName, reducedMotion, onCalendarClick, onRestart, onPage, onAnimating, onBound]);
+  }, [displayName, reducedMotion, onCalendarClick, onRsvpClick, onRestart, onPage, onAnimating, onBound, fbUser, onFacebookLogin, isLoggingInFb]);
 
   return (
     <div className="flip-book-host">
       <div ref={bookElRef} className="flip-book">
         <div className="flip-page" data-density="hard" data-flip-index="0">
-          <CoverPage />
+          <CoverPage fbUser={fbUser} onFacebookLogin={onFacebookLogin} isLoggingInFb={isLoggingInFb} />
         </div>
         <div className="flip-page" data-flip-index="1">
           <InvitationPage displayName={displayName} />
         </div>
         <div className="flip-page" data-flip-index="2">
-          <EventDetailsPage onCalendarClick={onCalendarClick} />
+          <EventDetailsPage onCalendarClick={onCalendarClick} onRsvpClick={onRsvpClick} />
         </div>
         <div className="flip-page" data-density="hard" data-flip-index="3">
           <FinalPage onRestart={onRestart} />
@@ -341,13 +490,26 @@ const FlipBookEngine = memo(function FlipBookEngine({
 type BookletViewerProps = {
   displayName: string;
   onCalendarClick: () => void;
+  onRsvpClick: () => void;
   onRestartExperience: () => void;
   interactive?: boolean;
+  fbUser?: FacebookUserProfile | null;
+  onFacebookLogin?: () => void;
+  isLoggingInFb?: boolean;
 };
 
 export const BookletViewer = forwardRef<BookletViewerHandle, BookletViewerProps>(
   function BookletViewer(
-    { displayName, onCalendarClick, onRestartExperience, interactive = true },
+    {
+      displayName,
+      onCalendarClick,
+      onRsvpClick,
+      onRestartExperience,
+      interactive = true,
+      fbUser,
+      onFacebookLogin,
+      isLoggingInFb,
+    },
     ref
   ) {
     const reducedMotion = useReducedMotion();
@@ -404,10 +566,14 @@ export const BookletViewer = forwardRef<BookletViewerHandle, BookletViewerProps>
             displayName={displayName}
             reducedMotion={reducedMotion}
             onCalendarClick={onCalendarClick}
+            onRsvpClick={onRsvpClick}
             onRestart={onRestartExperience}
             onPage={onPage}
             onAnimating={onAnimating}
             onBound={onBound}
+            fbUser={fbUser}
+            onFacebookLogin={onFacebookLogin}
+            isLoggingInFb={isLoggingInFb}
           />
         </div>
 
